@@ -7,15 +7,22 @@ pub mod devnet {
     use ::sp_std::vec::Vec;
 }
 use devnet::runtime_types::pallet_smart_contract::types::Contract;
-use devnet::runtime_types::pallet_tfgrid::interface::{InterfaceIp, InterfaceMac, InterfaceName};
-use devnet::runtime_types::pallet_tfgrid::pub_config::{Domain, GW4, GW6, IP4, IP6};
-use devnet::runtime_types::pallet_tfgrid::twin::TwinIp;
-use devnet::runtime_types::pallet_tfgrid::types::Twin as TwinData;
+use devnet::runtime_types::pallet_tfgrid::{
+    farm::FarmName,
+    interface::{InterfaceIp, InterfaceMac, InterfaceName},
+    pub_config::{Domain, GW4, GW6, IP4, IP6},
+    pub_ip::{GatewayIP, PublicIP},
+    twin::TwinIp,
+    types::Twin as TwinData,
+};
 use devnet::runtime_types::tfchain_support::types::{
-    Interface, Node as NodeData, PublicConfig, IP,
+    Farm as FarmData, Interface, Node as NodeData, PublicConfig, PublicIP as PublicIpData, IP,
 };
 
 pub type Twin = TwinData<TwinIp, sp_core::crypto::AccountId32>;
+
+pub type PublicIpOf = PublicIpData<PublicIP, GatewayIP>;
+pub type Farm = FarmData<FarmName, PublicIpOf>;
 
 pub type IPv4 = IP<IP4, GW4>;
 pub type IPv6 = IP<IP6, GW6>;
@@ -62,28 +69,35 @@ impl TfchainClient {
             .await
     }
 
-    pub async fn get_twin_by_id(&self, id: u32) -> Result<Twin, Error> {
-        let twin = devnet::storage().tfgrid_module().twins(id);
-        let t = self.api.storage().fetch(&twin, None).await?.unwrap();
-        println!("twin: {:?}", t);
-
-        Ok(t)
+    pub async fn get_twin_by_id(&self, id: u32) -> Result<Option<Twin>, Error> {
+        self.api
+            .storage()
+            .fetch(&devnet::storage().tfgrid_module().twins(id), None)
+            .await
     }
 
-    pub async fn get_contract_by_id(&self, id: u64) -> Result<Contract, Error> {
-        let contract = devnet::storage().smart_contract_module().contracts(id);
-        let c = self.api.storage().fetch(&contract, None).await?.unwrap();
-
-        println!("contract: {:?}", c);
-
-        Ok(c)
+    pub async fn get_contract_by_id(&self, id: u64) -> Result<Option<Contract>, Error> {
+        self.api
+            .storage()
+            .fetch(
+                &devnet::storage().smart_contract_module().contracts(id),
+                None,
+            )
+            .await
     }
 
-    pub async fn get_node_by_id(&self, id: u32) -> Result<Node, Error> {
-        let node = devnet::storage().tfgrid_module().nodes(id);
-        let n = self.api.storage().fetch(&node, None).await?.unwrap();
+    pub async fn get_node_by_id(&self, id: u32) -> Result<Option<Node>, Error> {
+        self.api
+            .storage()
+            .fetch(&devnet::storage().tfgrid_module().nodes(id), None)
+            .await
+    }
 
-        Ok(n)
+    pub async fn get_farm_by_id(&self, id: u32) -> Result<Option<Farm>, Error> {
+        self.api
+            .storage()
+            .fetch(&devnet::storage().tfgrid_module().farms(id), None)
+            .await
     }
 }
 
