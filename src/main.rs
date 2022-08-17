@@ -75,31 +75,34 @@
 // }
 
 pub mod client;
-use sp_core::sr25519;
-use sp_core::Pair;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let phrase = "oyster orient plunge devote light wrap hold mother essence casino rebel distance";
+    let p = client::get_from_seed(phrase, None);
 
-    let p = sr25519::Pair::from_phrase(phrase, None).unwrap();
+    let seed = "0x9917ea107aca8e9c29f4530413b41333ada03cf39fede45cde611b943e2e8dd1";
+    let _ = client::get_from_seed(seed, None);
 
-    let cl = client::new_substrate_client(String::from("ws://localhost:9944"), p.0).await?;
+    let cl = client::TfchainClient::new(String::from("ws://localhost:9944"), p).await?;
 
-    println!("trying to submit tand call");
-    let hash = cl
-        .sign_terms_and_conditions(String::from("some"), String::from("some"))
-        .await?;
+    // println!("trying to submit tand call");
+    // let hash = cl
+    //     .sign_terms_and_conditions(String::from("some"), String::from("some"))
+    //     .await?;
 
-    println!("tandc call executed with hash {:?}", hash);
+    // println!("tandc call executed with hash {:?}", hash);
 
-    let hash = cl.create_twin(String::from("::1")).await?;
+    // let hash = cl.create_twin(String::from("::1")).await?;
 
-    println!("twin call executed with hash {:?}", hash);
+    // println!("twin call executed with hash {:?}", hash);
 
-    let twin = cl.get_twin_by_id(1).await?;
+    let _ = cl.get_twin_by_id(1).await?;
 
-    let contract = cl.get_contract_by_id(915).await?;
+    let _ = cl.get_contract_by_id(915).await?;
+
+    let node = cl.get_node_by_id(15).await?;
+    println!("got node: {:?}", node);
 
     Ok(())
 }
