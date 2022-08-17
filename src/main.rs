@@ -75,6 +75,7 @@
 // }
 
 pub mod client;
+pub mod runtimes;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -84,7 +85,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let seed = "0x9917ea107aca8e9c29f4530413b41333ada03cf39fede45cde611b943e2e8dd1";
     let _ = client::get_from_seed(seed, None);
 
-    let cl = client::TfchainClient::new(String::from("ws://localhost:9944"), p).await?;
+    let network = "devnet";
+
+    let cl = client::TfchainClient::new(String::from("ws://localhost:9944"), p, network).await?;
 
     // println!("trying to submit tand call");
     // let hash = cl
@@ -97,12 +100,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // println!("twin call executed with hash {:?}", hash);
 
-    let _ = cl.get_twin_by_id(1).await?;
+    let twin = cl.get_twin_by_id(1).await?;
+    println!("got twin: {:?}", twin);
 
-    let _ = cl.get_contract_by_id(915).await?;
+    // let _ = cl.get_contract_by_id(915).await?;
 
-    let node = cl.get_node_by_id(15).await?;
-    println!("got node: {:?}", node);
+    // let node = cl.get_node_by_id(15).await?;
+    // println!("got node: {:?}", node);
 
     Ok(())
 }
