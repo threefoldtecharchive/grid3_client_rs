@@ -31,6 +31,10 @@ pub type Node = NodeData<PublicConfigOf, InterfaceOf>;
 
 use crate::client::TfchainClient;
 
+pub use devnet::tft_bridge_module::events::BurnTransactionReady;
+pub use devnet::tft_bridge_module::events::BurnTransactionSignatureAdded;
+pub use devnet::tft_bridge_module::events::MintTransactionProposed;
+
 pub async fn create_twin(cl: &TfchainClient, ip: String) -> Result<H256, Error> {
     let create_twin_tx = devnet::tx()
         .tfgrid_module()

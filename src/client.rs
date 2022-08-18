@@ -1,6 +1,9 @@
 use std::str::FromStr;
 
-use crate::runtimes::{devnet, support::SupportedRuntime};
+use crate::runtimes::{
+    devnet::{self},
+    support::SupportedRuntime,
+};
 use regex::Regex;
 use sp_core::{sr25519, Pair};
 use subxt::{Error, OnlineClient, PolkadotConfig};
