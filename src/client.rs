@@ -6,7 +6,10 @@ use crate::runtimes::{
 };
 use regex::Regex;
 use sp_core::{sr25519, Pair};
-use subxt::{Error, OnlineClient, PolkadotConfig};
+use subxt::{Config, Error, OnlineClient, PolkadotConfig};
+
+// BlockHash
+pub type Hash = <PolkadotConfig as Config>::Hash;
 
 pub struct TfchainClient {
     pub runtime: SupportedRuntime,
