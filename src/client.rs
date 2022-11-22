@@ -1,11 +1,8 @@
 use std::str::FromStr;
 
-use crate::runtimes::{
-    devnet::{self},
-    support::SupportedRuntime,
-};
+use crate::runtimes::{devnet, mainnet, support::SupportedRuntime};
 use regex::Regex;
-use sp_core::{sr25519, Pair};
+use sp_core::{crypto::AccountId32, sr25519, Pair};
 use subxt::{Config, Error, OnlineClient, PolkadotConfig};
 
 // BlockHash
@@ -33,6 +30,17 @@ impl TfchainClient {
     pub async fn get_twin_by_id(&self, id: u32) -> Result<Option<devnet::Twin>, Error> {
         match self.runtime {
             SupportedRuntime::Devnet => devnet::get_twin_by_id(self, id).await,
+            SupportedRuntime::Mainnet => devnet::get_twin_by_id(self, id).await,
+        }
+    }
+
+    pub async fn get_balance(
+        &self,
+        account: AccountId32,
+    ) -> Result<mainnet::SystemAccountInfo, Error> {
+        match self.runtime {
+            SupportedRuntime::Devnet => mainnet::get_balance(self, account).await,
+            SupportedRuntime::Mainnet => mainnet::get_balance(self, account).await,
         }
     }
 }

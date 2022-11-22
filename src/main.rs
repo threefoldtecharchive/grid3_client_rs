@@ -76,6 +76,7 @@
 
 pub mod client;
 pub mod runtimes;
+use sp_core::crypto::AccountId32;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -85,9 +86,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let seed = "0x9917ea107aca8e9c29f4530413b41333ada03cf39fede45cde611b943e2e8dd1";
     let _ = client::get_from_seed(seed, None);
 
-    let network = "devnet";
+    let network = "mainnet";
 
-    let cl = client::TfchainClient::new(String::from("ws://localhost:9944"), p, network).await?;
+    let cl = client::TfchainClient::new(String::from("ws://10.10.0.19:9944"), p, network).await?;
 
     // println!("trying to submit tand call");
     // let hash = cl
@@ -100,8 +101,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // println!("twin call executed with hash {:?}", hash);
 
-    let twin = cl.get_twin_by_id(1).await?;
-    println!("got twin: {:?}", twin);
+    // let twin = cl.get_twin_by_id(1).await?;
+    // println!("got twin: {:?}", twin);
+
+    let account = "5HmARi4eGLhb9hvFrbCC5F8dCNRTS8MWKc6xbmPUS1cnKD7c"
+        .parse::<AccountId32>()
+        .unwrap();
+    let balance = cl.get_balance(account).await?;
+    println!("got balance: {:?}", balance);
 
     // let _ = cl.get_contract_by_id(915).await?;
 
