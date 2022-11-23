@@ -28,21 +28,17 @@ impl TfchainClient {
 
     pub async fn get_twin_by_id(&self, id: u32) -> Result<Option<types::Twin>, Error> {
         match self.runtime {
-            SupportedRuntime::Devnet => Ok(devnet::get_twin_by_id(self, id)
-                .await?
-                .map(types::Twin::from)),
-            SupportedRuntime::Mainnet => Ok(mainnet::get_twin_by_id(self, id)
-                .await?
-                .map(types::Twin::from)),
+            SupportedRuntime::Devnet => devnet::get_twin_by_id(self, id).await,
+            SupportedRuntime::Mainnet => mainnet::get_twin_by_id(self, id).await,
         }
     }
 
     pub async fn get_balance(
         &self,
         account: AccountId32,
-    ) -> Result<mainnet::SystemAccountInfo, Error> {
+    ) -> Result<Option<types::SystemAccountInfo>, Error> {
         match self.runtime {
-            SupportedRuntime::Devnet => mainnet::get_balance(self, account).await,
+            SupportedRuntime::Devnet => devnet::get_balance(self, account).await,
             SupportedRuntime::Mainnet => mainnet::get_balance(self, account).await,
         }
     }

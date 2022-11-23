@@ -3,6 +3,7 @@ pub mod mainnet {
     #[subxt(substitute_type = "frame_support::storage::bounded_vec::BoundedVec")]
     use ::sp_std::vec::Vec;
 }
+use super::types;
 pub use mainnet::runtime_types::frame_system::AccountInfo;
 pub use mainnet::runtime_types::pallet_balances::AccountData;
 pub use mainnet::runtime_types::pallet_smart_contract::types::Contract;
@@ -37,6 +38,8 @@ pub use mainnet::tft_bridge_module::events::BurnTransactionReady;
 pub use mainnet::tft_bridge_module::events::BurnTransactionSignatureAdded;
 pub use mainnet::tft_bridge_module::events::MintTransactionProposed;
 
+pub type SystemAccountInfo = AccountInfo<u32, AccountData<u128>>;
+
 pub async fn create_twin(cl: &TfchainClient, ip: String) -> Result<H256, Error> {
     let create_twin_tx = mainnet::tx()
         .tfgrid_module()
@@ -64,11 +67,13 @@ pub async fn sign_terms_and_conditions(
         .await
 }
 
-pub async fn get_twin_by_id(cl: &TfchainClient, id: u32) -> Result<Option<Twin>, Error> {
-    cl.api
+pub async fn get_twin_by_id(cl: &TfchainClient, id: u32) -> Result<Option<types::Twin>, Error> {
+    Ok(cl
+        .api
         .storage()
         .fetch(&mainnet::storage().tfgrid_module().twins(id), None)
-        .await
+        .await?
+        .map(types::Twin::from))
 }
 
 pub async fn get_contract_by_id(cl: &TfchainClient, id: u64) -> Result<Option<Contract>, Error> {
@@ -95,14 +100,14 @@ pub async fn get_farm_by_id(cl: &TfchainClient, id: u32) -> Result<Option<Farm>,
         .await
 }
 
-pub type SystemAccountInfo = Option<AccountInfo<u32, AccountData<u128>>>;
-
 pub async fn get_balance(
     cl: &TfchainClient,
     account: AccountId32,
-) -> Result<SystemAccountInfo, Error> {
-    cl.api
+) -> Result<Option<types::SystemAccountInfo>, Error> {
+    Ok(cl
+        .api
         .storage()
         .fetch(&mainnet::storage().system().account(account), None)
-        .await
+        .await?
+        .map(|t| types::SystemAccountInfo::from(t)))
 }

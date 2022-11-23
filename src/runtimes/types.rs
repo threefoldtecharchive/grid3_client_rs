@@ -1,9 +1,49 @@
 use super::devnet::devnet::runtime_types::pallet_tfgrid::types::EntityProof as DevnetEntityProof;
+use super::devnet::SystemAccountInfo as DevnetSystemAccountInfo;
 use super::devnet::Twin as DevnetTwin;
 use super::mainnet::mainnet::runtime_types::pallet_tfgrid::types::EntityProof as MainnetEntityProof;
+use super::mainnet::SystemAccountInfo as MainnetSystemAccountInfo;
 use super::mainnet::Twin as MainnetTwin;
+use frame_system::AccountInfo;
+use pallet_balances::AccountData;
 use serde::{Deserialize, Serialize};
 use sp_core::crypto::AccountId32;
+
+pub type SystemAccountInfo = AccountInfo<u32, AccountData<u128>>;
+
+impl From<MainnetSystemAccountInfo> for SystemAccountInfo {
+    fn from(info: MainnetSystemAccountInfo) -> Self {
+        SystemAccountInfo {
+            nonce: info.nonce,
+            consumers: info.consumers,
+            providers: info.providers,
+            sufficients: info.sufficients,
+            data: pallet_balances::AccountData {
+                free: info.data.free,
+                fee_frozen: info.data.fee_frozen,
+                misc_frozen: info.data.misc_frozen,
+                reserved: info.data.reserved,
+            },
+        }
+    }
+}
+
+impl From<DevnetSystemAccountInfo> for SystemAccountInfo {
+    fn from(info: DevnetSystemAccountInfo) -> Self {
+        SystemAccountInfo {
+            nonce: info.nonce,
+            consumers: info.consumers,
+            providers: info.providers,
+            sufficients: info.sufficients,
+            data: pallet_balances::AccountData {
+                free: info.data.free,
+                fee_frozen: info.data.fee_frozen,
+                misc_frozen: info.data.misc_frozen,
+                reserved: info.data.reserved,
+            },
+        }
+    }
+}
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct Twin {

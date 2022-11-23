@@ -3,6 +3,9 @@ pub mod devnet {
     #[subxt(substitute_type = "frame_support::storage::bounded_vec::BoundedVec")]
     use ::sp_std::vec::Vec;
 }
+use super::types;
+pub use devnet::runtime_types::frame_system::AccountInfo;
+pub use devnet::runtime_types::pallet_balances::AccountData;
 pub use devnet::runtime_types::pallet_smart_contract::types::Contract;
 pub use devnet::runtime_types::pallet_tfgrid::{
     farm::FarmName,
@@ -15,7 +18,7 @@ pub use devnet::runtime_types::pallet_tfgrid::{
 pub use devnet::runtime_types::tfchain_support::types::{
     Farm as FarmData, Interface, Node as NodeData, PublicConfig, PublicIP as PublicIpData, IP,
 };
-use sp_core::H256;
+use sp_core::{crypto::AccountId32, H256};
 use subxt::{tx::PairSigner, Error};
 
 pub type Twin = TwinData<TwinIp, sp_core::crypto::AccountId32>;
@@ -34,6 +37,8 @@ use crate::client::TfchainClient;
 pub use devnet::tft_bridge_module::events::BurnTransactionReady;
 pub use devnet::tft_bridge_module::events::BurnTransactionSignatureAdded;
 pub use devnet::tft_bridge_module::events::MintTransactionProposed;
+
+pub type SystemAccountInfo = AccountInfo<u32, AccountData<u128>>;
 
 pub async fn create_twin(cl: &TfchainClient, ip: String) -> Result<H256, Error> {
     let create_twin_tx = devnet::tx()
@@ -62,11 +67,13 @@ pub async fn sign_terms_and_conditions(
         .await
 }
 
-pub async fn get_twin_by_id(cl: &TfchainClient, id: u32) -> Result<Option<Twin>, Error> {
-    cl.api
+pub async fn get_twin_by_id(cl: &TfchainClient, id: u32) -> Result<Option<types::Twin>, Error> {
+    Ok(cl
+        .api
         .storage()
         .fetch(&devnet::storage().tfgrid_module().twins(id), None)
-        .await
+        .await?
+        .map(types::Twin::from))
 }
 
 pub async fn get_contract_by_id(cl: &TfchainClient, id: u64) -> Result<Option<Contract>, Error> {
@@ -91,4 +98,16 @@ pub async fn get_farm_by_id(cl: &TfchainClient, id: u32) -> Result<Option<Farm>,
         .storage()
         .fetch(&devnet::storage().tfgrid_module().farms(id), None)
         .await
+}
+
+pub async fn get_balance(
+    cl: &TfchainClient,
+    account: AccountId32,
+) -> Result<Option<types::SystemAccountInfo>, Error> {
+    Ok(cl
+        .api
+        .storage()
+        .fetch(&devnet::storage().system().account(account), None)
+        .await?
+        .map(types::SystemAccountInfo::from))
 }
