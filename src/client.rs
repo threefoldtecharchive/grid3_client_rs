@@ -1,8 +1,7 @@
-use std::str::FromStr;
-
-use crate::runtimes::{devnet, mainnet, support::SupportedRuntime};
+use crate::runtimes::{devnet, mainnet, support::SupportedRuntime, types};
 use regex::Regex;
 use sp_core::{crypto::AccountId32, sr25519, Pair};
+use std::str::FromStr;
 use subxt::{Config, Error, OnlineClient, PolkadotConfig};
 
 // BlockHash
@@ -27,10 +26,14 @@ impl TfchainClient {
         Ok(TfchainClient { pair, api, runtime })
     }
 
-    pub async fn get_twin_by_id(&self, id: u32) -> Result<Option<devnet::Twin>, Error> {
+    pub async fn get_twin_by_id(&self, id: u32) -> Result<Option<types::Twin>, Error> {
         match self.runtime {
-            SupportedRuntime::Devnet => devnet::get_twin_by_id(self, id).await,
-            SupportedRuntime::Mainnet => devnet::get_twin_by_id(self, id).await,
+            SupportedRuntime::Devnet => Ok(devnet::get_twin_by_id(self, id)
+                .await?
+                .map(types::Twin::from)),
+            SupportedRuntime::Mainnet => Ok(mainnet::get_twin_by_id(self, id)
+                .await?
+                .map(types::Twin::from)),
         }
     }
 
@@ -49,7 +52,7 @@ impl TfchainClient {
 pub fn get_from_seed(seed: &str, pass: Option<&str>) -> sr25519::Pair {
     // Use regex to remove control characters
     let re = Regex::new(r"[\x00-\x1F]").unwrap();
-    let clean_seed = re.replace_all(&seed.trim(), "");
+    let clean_seed = re.replace_all(seed.trim(), "");
     Pair::from_string_with_seed(&clean_seed, pass)
         .expect("constructed from known-good static value; qed")
         .0
