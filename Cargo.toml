@@ -33,3 +33,9 @@ sp-runtime =  { git = "https://github.com/paritytech/substrate", branch = "polka
 regex = "1.6.0"
 frame-system =  { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.24" }
 pallet-balances =  { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.24" }
+
+# Tfchain dependencies
+pallet-tfgrid = { git = "https://github.com/threefoldtech/tfchain" }
+pallet-smart-contract = { git = "https://github.com/threefoldtech/tfchain" }
+tfchain-support = { git = "https://github.com/threefoldtech/tfchain" }
+tfchain-runtime = { git = "https://github.com/threefoldtech/tfchain" }

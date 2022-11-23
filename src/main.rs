@@ -102,8 +102,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // println!("twin call executed with hash {:?}", hash);
 
-    // let twin = cl.get_twin_by_id(1).await?;
-    // println!("got twin: {:?}", twin);
+    let twin = cl.get_twin_by_id(1, None).await?;
+    println!("got twin: {:?}", twin);
+
+    let farm = cl.get_farm_by_id(1, None).await?;
+    println!("got farm: {:?}", farm);
 
     let account = "5HmARi4eGLhb9hvFrbCC5F8dCNRTS8MWKc6xbmPUS1cnKD7c"
         .parse::<AccountId32>()
