@@ -67,11 +67,15 @@ pub async fn sign_terms_and_conditions(
         .await
 }
 
-pub async fn get_twin_by_id(cl: &TfchainClient, id: u32) -> Result<Option<types::Twin>, Error> {
+pub async fn get_twin_by_id(
+    cl: &TfchainClient,
+    id: u32,
+    at_block: Option<types::Hash>,
+) -> Result<Option<types::Twin>, Error> {
     Ok(cl
         .api
         .storage()
-        .fetch(&devnet::storage().tfgrid_module().twins(id), None)
+        .fetch(&devnet::storage().tfgrid_module().twins(id), at_block)
         .await?
         .map(types::Twin::from))
 }
@@ -100,14 +104,22 @@ pub async fn get_farm_by_id(cl: &TfchainClient, id: u32) -> Result<Option<Farm>,
         .await
 }
 
+pub async fn get_block_hash(
+    cl: &TfchainClient,
+    block_number: Option<types::BlockNumber>,
+) -> Result<Option<types::Hash>, Error> {
+    cl.api.rpc().block_hash(block_number).await
+}
+
 pub async fn get_balance(
     cl: &TfchainClient,
-    account: AccountId32,
+    account: &AccountId32,
+    at_block: Option<types::Hash>,
 ) -> Result<Option<types::SystemAccountInfo>, Error> {
     Ok(cl
         .api
         .storage()
-        .fetch(&devnet::storage().system().account(account), None)
+        .fetch(&devnet::storage().system().account(account), at_block)
         .await?
         .map(types::SystemAccountInfo::from))
 }

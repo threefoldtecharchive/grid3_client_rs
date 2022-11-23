@@ -8,6 +8,10 @@ use frame_system::AccountInfo;
 use pallet_balances::AccountData;
 use serde::{Deserialize, Serialize};
 use sp_core::crypto::AccountId32;
+use subxt::{Config, PolkadotConfig};
+
+pub type Hash = <PolkadotConfig as Config>::Hash;
+pub type BlockNumber = subxt::rpc::BlockNumber;
 
 pub type SystemAccountInfo = AccountInfo<u32, AccountData<u128>>;
 

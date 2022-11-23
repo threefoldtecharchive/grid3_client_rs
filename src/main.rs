@@ -76,6 +76,7 @@
 
 pub mod client;
 pub mod runtimes;
+use client::BlockNumber;
 use sp_core::crypto::AccountId32;
 
 #[tokio::main]
@@ -107,8 +108,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let account = "5HmARi4eGLhb9hvFrbCC5F8dCNRTS8MWKc6xbmPUS1cnKD7c"
         .parse::<AccountId32>()
         .unwrap();
-    let balance = cl.get_balance(account).await?;
-    println!("got balance: {:?}", balance);
+
+    let block_1 = cl.get_block_hash(Some(BlockNumber::from(1 as u32))).await?;
+    println!("block 1 hash {:?}", block_1);
+
+    let balance_at_block_1 = cl.get_balance(&account, block_1).await;
+    println!("balance at block 1: {:?}", balance_at_block_1);
+
+    let balance = cl.get_balance(&account, None).await?;
+    println!("balance at current block: {:?}", balance);
 
     // let _ = cl.get_contract_by_id(915).await?;
 
