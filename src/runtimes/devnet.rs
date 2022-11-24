@@ -97,11 +97,17 @@ pub async fn get_node_by_id(cl: &TfchainClient, id: u32) -> Result<Option<Node>,
         .await
 }
 
-pub async fn get_farm_by_id(cl: &TfchainClient, id: u32) -> Result<Option<Farm>, Error> {
-    cl.api
+pub async fn get_farm_by_id(
+    cl: &TfchainClient,
+    id: u32,
+    at_block: Option<types::Hash>,
+) -> Result<Option<types::TfgridFarm>, Error> {
+    Ok(cl
+        .api
         .storage()
-        .fetch(&devnet::storage().tfgrid_module().farms(id), None)
-        .await
+        .fetch(&devnet::storage().tfgrid_module().farms(id), at_block)
+        .await?
+        .map(types::TfgridFarm::from))
 }
 
 pub async fn get_block_hash(
