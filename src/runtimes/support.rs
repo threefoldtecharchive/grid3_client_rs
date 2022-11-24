@@ -3,7 +3,7 @@ use std::str::FromStr;
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum SupportedRuntime {
     Devnet,
-    // Testnet,
+    Testnet,
     Mainnet,
 }
 
@@ -17,7 +17,7 @@ impl FromStr for SupportedRuntime {
         match v {
             "devnet" => Ok(Self::Devnet),
             "mainnet" => Ok(Self::Mainnet),
-            // "testnet" => Ok(Self::Testnet),
+            "testnet" => Ok(Self::Testnet),
             _ => Err(UnsupportedRuntimeError),
         }
     }

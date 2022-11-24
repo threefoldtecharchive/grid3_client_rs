@@ -3164,8 +3164,22 @@ dependencies = [
  "subxt",
  "subxt-codegen",
  "syn",
+ "tfchain-support",
  "tokio",
  "tracing-subscriber 0.3.15",
+]
+
+[[package]]
+name = "tfchain-support"
+version = "1.0.0"
+source = "git+https://github.com/threefoldtech/tfchain#6af02480d99af0298951b6350bc5ef5f79a2b43c"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-runtime 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.24)",
+ "sp-std 4.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.24)",
 ]
 
 [[package]]

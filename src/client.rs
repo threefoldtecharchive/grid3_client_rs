@@ -1,9 +1,9 @@
-use crate::runtimes::{devnet, mainnet, support::SupportedRuntime, types};
+use crate::runtimes::{devnet, mainnet, support::SupportedRuntime, testnet, types};
 use regex::Regex;
 use sp_core::{crypto::AccountId32, sr25519, Pair};
 use std::str::FromStr;
 use subxt::{Error, OnlineClient, PolkadotConfig};
-pub use types::{BlockNumber, Hash, SystemAccountInfo, Twin};
+pub use types::{BlockNumber, Hash, SystemAccountInfo, TfgridFarm, Twin};
 
 pub struct TfchainClient {
     pub runtime: SupportedRuntime,
@@ -31,7 +31,20 @@ impl TfchainClient {
     ) -> Result<Option<Twin>, Error> {
         match self.runtime {
             SupportedRuntime::Devnet => devnet::get_twin_by_id(self, id, at_block).await,
+            SupportedRuntime::Testnet => testnet::get_twin_by_id(self, id, at_block).await,
             SupportedRuntime::Mainnet => mainnet::get_twin_by_id(self, id, at_block).await,
+        }
+    }
+
+    pub async fn get_farm_by_id(
+        &self,
+        id: u32,
+        at_block: Option<Hash>,
+    ) -> Result<Option<TfgridFarm>, Error> {
+        match self.runtime {
+            SupportedRuntime::Devnet => devnet::get_farm_by_id(self, id, at_block).await,
+            SupportedRuntime::Testnet => testnet::get_farm_by_id(self, id, at_block).await,
+            SupportedRuntime::Mainnet => mainnet::get_farm_by_id(self, id, at_block).await,
         }
     }
 
@@ -42,6 +55,7 @@ impl TfchainClient {
     ) -> Result<Option<SystemAccountInfo>, Error> {
         match self.runtime {
             SupportedRuntime::Devnet => devnet::get_balance(self, account, at_block).await,
+            SupportedRuntime::Testnet => testnet::get_balance(self, account, at_block).await,
             SupportedRuntime::Mainnet => mainnet::get_balance(self, account, at_block).await,
         }
     }
@@ -52,6 +66,7 @@ impl TfchainClient {
     ) -> Result<Option<Hash>, Error> {
         match self.runtime {
             SupportedRuntime::Devnet => devnet::get_block_hash(self, block_number).await,
+            SupportedRuntime::Testnet => testnet::get_block_hash(self, block_number).await,
             SupportedRuntime::Mainnet => mainnet::get_block_hash(self, block_number).await,
         }
     }
