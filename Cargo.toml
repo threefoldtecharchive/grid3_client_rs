@@ -35,7 +35,4 @@ frame-system =  { git = "https://github.com/paritytech/substrate", branch = "pol
 pallet-balances =  { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.24" }
 
 # Tfchain dependencies
-pallet-tfgrid = { git = "https://github.com/threefoldtech/tfchain" }
-pallet-smart-contract = { git = "https://github.com/threefoldtech/tfchain" }
 tfchain-support = { git = "https://github.com/threefoldtech/tfchain" }
-tfchain-runtime = { git = "https://github.com/threefoldtech/tfchain" }
