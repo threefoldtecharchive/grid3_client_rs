@@ -89,7 +89,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let network = "mainnet";
 
-    let cl = client::TfchainClient::new(String::from("ws://10.10.0.19:9944"), p, network).await?;
+    let cl = client::TfchainClient::new(String::from("wss://tfchain.grid.tf:443"), p, network).await?;
 
     // println!("trying to submit tand call");
     // let hash = cl
@@ -107,6 +107,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let farm = cl.get_farm_by_id(1, None).await?;
     println!("got farm: {:?}", farm);
+
+    let node = cl.get_node_by_id(1, None).await?;
+    println!("got node: {:?}", node);
 
     let account = "5HmARi4eGLhb9hvFrbCC5F8dCNRTS8MWKc6xbmPUS1cnKD7c"
         .parse::<AccountId32>()
