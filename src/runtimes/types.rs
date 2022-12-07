@@ -43,6 +43,92 @@ pub struct TfgridFarm {
 }
 
 #[derive(Debug, Clone)]
+pub struct TfgridNode {
+    pub version: u32,
+    pub id: u32,
+    pub farm_id: u32,
+    pub twin_id: u32,
+    pub resources: ConsumableResources,
+    pub location: Location,
+    pub power: Power,
+    pub public_config: Option<PublicConfig>,
+    pub created: u64,
+    pub farming_policy_id: u32,
+    pub interfaces: Vec<Interface>,
+    pub certification: NodeCertification,
+    pub secure_boot: bool,
+    pub serial_number: Option<String>,
+    pub connection_price: u32,
+}
+
+#[derive(Debug, Clone)]
+pub struct ConsumableResources {
+    pub total_resources: Resources,
+    pub used_resources: Resources,
+}
+
+#[derive(Debug, Clone)]
+pub struct Resources {
+    pub hru: u64,
+    pub sru: u64,
+    pub cru: u64,
+    pub mru: u64,
+}
+
+#[derive(Debug, Clone)]
+pub struct Location {
+    pub city: String,
+    pub country: String,
+    pub latitude: String,
+    pub longitude: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct IP {
+    pub ip: String,
+    pub gw: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct PublicConfig {
+    ip4: IP,
+    ip6: Option<IP>,
+    domain: Option<String>,
+}
+
+#[derive(Debug, Clone)]
+pub struct Power {
+    pub target: PowerTarget,
+    pub state: PowerState,
+    pub last_uptime: u64,
+}
+
+#[derive(Debug, Clone)]
+pub enum PowerTarget {
+    Up,
+    Down,
+}
+
+#[derive(Debug, Clone)]
+pub enum PowerState {
+    Up,
+    Down(u32),
+}
+
+#[derive(Debug, Clone)]
+pub enum NodeCertification {
+    Diy,
+    Certified,
+}
+
+#[derive(Debug, Clone)]
+pub struct Interface {
+    pub name: String,
+    pub mac: String,
+    pub ips: Vec<String>,
+}
+
+#[derive(Debug, Clone)]
 
 pub struct FarmPublicIP {
     pub ip: String,
