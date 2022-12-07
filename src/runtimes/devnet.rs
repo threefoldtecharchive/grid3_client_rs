@@ -90,11 +90,16 @@ pub async fn get_contract_by_id(cl: &TfchainClient, id: u64) -> Result<Option<Co
         .await
 }
 
-pub async fn get_node_by_id(cl: &TfchainClient, id: u32) -> Result<Option<Node>, Error> {
-    cl.api
+pub async fn get_node_by_id(
+    cl: &TfchainClient,
+    id: u32,
+    at_block: Option<types::Hash>,
+) -> Result<Option<types::TfgridNode>, Error> {
+    Ok(cl.api
         .storage()
-        .fetch(&devnet::storage().tfgrid_module().nodes(id), None)
-        .await
+        .fetch(&devnet::storage().tfgrid_module().nodes(id), at_block)
+        .await?
+        .map(types::TfgridNode::from))
 }
 
 pub async fn get_farm_by_id(

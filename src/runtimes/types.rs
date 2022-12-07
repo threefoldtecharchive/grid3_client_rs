@@ -8,21 +8,22 @@ use pallet_balances::AccountData;
 use tfchain_support::types::FarmCertification as SupportFarmCertification;
 
 use super::devnet::devnet::runtime_types::pallet_tfgrid::types::EntityProof as DevnetEntityProof;
-use super::devnet::devnet::runtime_types::tfchain_support::types::FarmCertification as DevnetFarmCertification;
+use super::devnet::devnet::runtime_types::tfchain_support::types::{FarmCertification as DevnetFarmCertification, NodeCertification as DevnetNodeCertification};
 use super::devnet::{
-    Farm as DevnetFarm, SystemAccountInfo as DevnetSystemAccountInfo, Twin as DevnetTwin,
+    Farm as DevnetFarm, Node as DevnetNode, SystemAccountInfo as DevnetSystemAccountInfo,
+    Twin as DevnetTwin,
 };
 
 use super::mainnet::mainnet::runtime_types::pallet_tfgrid::types::EntityProof as MainnetEntityProof;
-use super::mainnet::mainnet::runtime_types::tfchain_support::types::FarmCertification as MainnetFarmCertification;
+use super::mainnet::mainnet::runtime_types::tfchain_support::types::{FarmCertification as MainnetFarmCertification, NodeCertification as MainnetNodeCertification};
 use super::mainnet::{
-    Farm as MainnetFarm, SystemAccountInfo as MainnetSystemAccountInfo, Twin as MainnetTwin,
+    Farm as MainnetFarm, SystemAccountInfo as MainnetSystemAccountInfo, Twin as MainnetTwin, Node as MainnetNode,
 };
 
 use super::testnet::testnet::runtime_types::pallet_tfgrid::types::EntityProof as TestnetEntityProof;
-use super::testnet::testnet::runtime_types::tfchain_support::types::FarmCertification as TestnetFarmCertification;
+use super::testnet::testnet::runtime_types::tfchain_support::types::{FarmCertification as TestnetFarmCertification, NodeCertification as TestnetNodeCertification};
 use super::testnet::{
-    Farm as TestnetFarm, SystemAccountInfo as TestnetSystemAccountInfo, Twin as TestnetTwin,
+    Farm as TestnetFarm, SystemAccountInfo as TestnetSystemAccountInfo, Twin as TestnetTwin, Node as TestnetNode
 };
 
 pub type Hash = <PolkadotConfig as Config>::Hash;
@@ -61,13 +62,13 @@ pub struct TfgridNode {
     pub connection_price: u32,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct ConsumableResources {
     pub total_resources: Resources,
     pub used_resources: Resources,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct Resources {
     pub hru: u64,
     pub sru: u64,
@@ -91,9 +92,9 @@ pub struct IP {
 
 #[derive(Debug, Clone)]
 pub struct PublicConfig {
-    ip4: IP,
-    ip6: Option<IP>,
-    domain: Option<String>,
+    pub ip4: IP,
+    pub ip6: Option<IP>,
+    pub domain: Option<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -275,6 +276,269 @@ impl From<DevnetFarm> for TfgridFarm {
             dedicated_farm: farm.dedicated_farm,
             farming_policy_limits: limit,
             public_ips,
+        }
+    }
+}
+
+impl From<DevnetNode> for TfgridNode {
+    fn from(node: DevnetNode) -> Self {
+        let mut resources = ConsumableResources::default();
+        resources.total_resources.cru = node.resources.cru;
+        resources.total_resources.hru = node.resources.hru;
+        resources.total_resources.mru = node.resources.mru;
+        resources.total_resources.sru = node.resources.sru;
+
+        let location = Location {
+            city: String::from_utf8(node.city).expect("valid city"),
+            country: String::from_utf8(node.country).expect("valid city"),
+            latitude: String::from_utf8(node.location.latitude).expect("valid city"),
+            longitude: String::from_utf8(node.location.longitude).expect("valid city"),
+        };
+
+        let public_config = match node.public_config {
+            Some(config) => {
+                let mut pub_conf = PublicConfig {
+                    ip4: IP {
+                        ip: String::from_utf8(config.ip4.ip.0).expect("valid utf-8"),
+                        gw: String::from_utf8(config.ip4.gw.0).expect("valid utf-8"),
+                    },
+                    ip6: None,
+                    domain: None,
+                };
+
+                pub_conf.ip6 = match config.ip6 {
+                    Some(conf6) => Some(IP {
+                        ip: String::from_utf8(conf6.ip.0).expect("valid utf-8"),
+                        gw: String::from_utf8(conf6.gw.0).expect("valid utf-8"),
+                    }),
+                    None => None,
+                };
+
+                pub_conf.domain = match config.domain {
+                    Some(domain) => Some(String::from_utf8(domain.0).expect("valid utf-8")),
+                    None => None,
+                };
+
+                Some(pub_conf)
+            }
+            None => None,
+        };
+
+        let interfaces = node
+            .interfaces
+            .into_iter()
+            .map(|intf| {
+                let ips = intf.ips.into_iter().map(|ip| String::from_utf8(ip.0).expect("valid utf-8")).collect();
+                Interface {
+                    name: String::from_utf8(intf.name.0).expect("valid utf-8"),
+                    mac: String::from_utf8(intf.mac.0).expect("valid utf-8"),
+                    ips
+                }
+            } 
+        )
+            .collect();
+
+        let certification = match node.certification {
+            DevnetNodeCertification::Certified => NodeCertification::Certified,
+            DevnetNodeCertification::Diy => NodeCertification::Diy,
+        };
+
+        TfgridNode {
+            version: node.version,
+            id: node.id,
+            farm_id: node.farm_id,
+            twin_id: node.twin_id,
+            resources,
+            location,
+            power: Power {
+                target: PowerTarget::Up,
+                state: PowerState::Up,
+                last_uptime: 0,
+            },
+            public_config,
+            created: node.created,
+            farming_policy_id: node.farming_policy_id,
+            interfaces,
+            certification,
+            secure_boot: node.secure_boot,
+            serial_number: Some(String::from_utf8(node.serial_number).expect("valid utf-8")),
+            connection_price: node.connection_price,
+        }
+    }
+}
+
+
+impl From<TestnetNode> for TfgridNode {
+    fn from(node: TestnetNode) -> Self {
+        let mut resources = ConsumableResources::default();
+        resources.total_resources.cru = node.resources.cru;
+        resources.total_resources.hru = node.resources.hru;
+        resources.total_resources.mru = node.resources.mru;
+        resources.total_resources.sru = node.resources.sru;
+
+        let location = Location {
+            city: String::from_utf8(node.city).expect("valid city"),
+            country: String::from_utf8(node.country).expect("valid city"),
+            latitude: String::from_utf8(node.location.latitude).expect("valid city"),
+            longitude: String::from_utf8(node.location.longitude).expect("valid city"),
+        };
+
+        let public_config = match node.public_config {
+            Some(config) => {
+                let mut pub_conf = PublicConfig {
+                    ip4: IP {
+                        ip: String::from_utf8(config.ip4.ip.0).expect("valid utf-8"),
+                        gw: String::from_utf8(config.ip4.gw.0).expect("valid utf-8"),
+                    },
+                    ip6: None,
+                    domain: None,
+                };
+
+                pub_conf.ip6 = match config.ip6 {
+                    Some(conf6) => Some(IP {
+                        ip: String::from_utf8(conf6.ip.0).expect("valid utf-8"),
+                        gw: String::from_utf8(conf6.gw.0).expect("valid utf-8"),
+                    }),
+                    None => None,
+                };
+
+                pub_conf.domain = match config.domain {
+                    Some(domain) => Some(String::from_utf8(domain.0).expect("valid utf-8")),
+                    None => None,
+                };
+
+                Some(pub_conf)
+            }
+            None => None,
+        };
+
+        let interfaces = node
+            .interfaces
+            .into_iter()
+            .map(|intf| {
+                let ips = intf.ips.into_iter().map(|ip| String::from_utf8(ip.0).expect("valid utf-8")).collect();
+                Interface {
+                    name: String::from_utf8(intf.name.0).expect("valid utf-8"),
+                    mac: String::from_utf8(intf.mac.0).expect("valid utf-8"),
+                    ips
+                }
+            } 
+        )
+            .collect();
+
+        let certification = match node.certification {
+            TestnetNodeCertification::Certified => NodeCertification::Certified,
+            TestnetNodeCertification::Diy => NodeCertification::Diy,
+        };
+
+        TfgridNode {
+            version: node.version,
+            id: node.id,
+            farm_id: node.farm_id,
+            twin_id: node.twin_id,
+            resources,
+            location,
+            power: Power {
+                target: PowerTarget::Up,
+                state: PowerState::Up,
+                last_uptime: 0,
+            },
+            public_config,
+            created: node.created,
+            farming_policy_id: node.farming_policy_id,
+            interfaces,
+            certification,
+            secure_boot: node.secure_boot,
+            serial_number: Some(String::from_utf8(node.serial_number).expect("valid utf-8")),
+            connection_price: node.connection_price,
+        }
+    }
+}
+
+
+impl From<MainnetNode> for TfgridNode {
+    fn from(node: MainnetNode) -> Self {
+        let mut resources = ConsumableResources::default();
+        resources.total_resources.cru = node.resources.cru;
+        resources.total_resources.hru = node.resources.hru;
+        resources.total_resources.mru = node.resources.mru;
+        resources.total_resources.sru = node.resources.sru;
+
+        let location = Location {
+            city: String::from_utf8(node.city).expect("valid city"),
+            country: String::from_utf8(node.country).expect("valid city"),
+            latitude: String::from_utf8(node.location.latitude).expect("valid city"),
+            longitude: String::from_utf8(node.location.longitude).expect("valid city"),
+        };
+
+        let public_config = match node.public_config {
+            Some(config) => {
+                let mut pub_conf = PublicConfig {
+                    ip4: IP {
+                        ip: String::from_utf8(config.ip4.ip.0).expect("valid utf-8"),
+                        gw: String::from_utf8(config.ip4.gw.0).expect("valid utf-8"),
+                    },
+                    ip6: None,
+                    domain: None,
+                };
+
+                pub_conf.ip6 = match config.ip6 {
+                    Some(conf6) => Some(IP {
+                        ip: String::from_utf8(conf6.ip.0).expect("valid utf-8"),
+                        gw: String::from_utf8(conf6.gw.0).expect("valid utf-8"),
+                    }),
+                    None => None,
+                };
+
+                pub_conf.domain = match config.domain {
+                    Some(domain) => Some(String::from_utf8(domain.0).expect("valid utf-8")),
+                    None => None,
+                };
+
+                Some(pub_conf)
+            }
+            None => None,
+        };
+
+        let interfaces = node
+            .interfaces
+            .into_iter()
+            .map(|intf| {
+                let ips = intf.ips.into_iter().map(|ip| String::from_utf8(ip.0).expect("valid utf-8")).collect();
+                Interface {
+                    name: String::from_utf8(intf.name.0).expect("valid utf-8"),
+                    mac: String::from_utf8(intf.mac.0).expect("valid utf-8"),
+                    ips
+                }
+            } 
+        )
+            .collect();
+
+        let certification = match node.certification {
+            MainnetNodeCertification::Certified => NodeCertification::Certified,
+            MainnetNodeCertification::Diy => NodeCertification::Diy,
+        };
+
+        TfgridNode {
+            version: node.version,
+            id: node.id,
+            farm_id: node.farm_id,
+            twin_id: node.twin_id,
+            resources,
+            location,
+            power: Power {
+                target: PowerTarget::Up,
+                state: PowerState::Up,
+                last_uptime: 0,
+            },
+            public_config,
+            created: node.created,
+            farming_policy_id: node.farming_policy_id,
+            interfaces,
+            certification,
+            secure_boot: node.secure_boot,
+            serial_number: Some(String::from_utf8(node.serial_number).expect("valid utf-8")),
+            connection_price: node.connection_price,
         }
     }
 }

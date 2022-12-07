@@ -3,7 +3,7 @@ use regex::Regex;
 use sp_core::{crypto::AccountId32, sr25519, Pair};
 use std::str::FromStr;
 use subxt::{Error, OnlineClient, PolkadotConfig};
-pub use types::{BlockNumber, Hash, SystemAccountInfo, TfgridFarm, Twin};
+pub use types::{BlockNumber, Hash, SystemAccountInfo, TfgridFarm, TfgridNode, Twin};
 
 pub struct TfchainClient {
     pub runtime: SupportedRuntime,
@@ -45,6 +45,18 @@ impl TfchainClient {
             SupportedRuntime::Devnet => devnet::get_farm_by_id(self, id, at_block).await,
             SupportedRuntime::Testnet => testnet::get_farm_by_id(self, id, at_block).await,
             SupportedRuntime::Mainnet => mainnet::get_farm_by_id(self, id, at_block).await,
+        }
+    }
+
+    pub async fn get_node_by_id(
+        &self,
+        id: u32,
+        at_block: Option<Hash>,
+    ) -> Result<Option<TfgridNode>, Error> {
+        match self.runtime {
+            SupportedRuntime::Devnet => devnet::get_node_by_id(self, id, at_block).await,
+            SupportedRuntime::Testnet => testnet::get_node_by_id(self, id, at_block).await,
+            SupportedRuntime::Mainnet => mainnet::get_node_by_id(self, id, at_block).await,
         }
     }
 
