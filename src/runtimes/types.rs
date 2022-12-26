@@ -8,29 +8,43 @@ use pallet_balances::AccountData;
 use tfchain_support::types::FarmCertification as SupportFarmCertification;
 
 use super::devnet::devnet::runtime_types::pallet_tfgrid::types::EntityProof as DevnetEntityProof;
-use super::devnet::devnet::runtime_types::tfchain_support::types::{FarmCertification as DevnetFarmCertification, NodeCertification as DevnetNodeCertification};
+use super::devnet::devnet::runtime_types::tfchain_support::types::{
+    FarmCertification as DevnetFarmCertification, NodeCertification as DevnetNodeCertification,
+};
 use super::devnet::{
     Farm as DevnetFarm, Node as DevnetNode, SystemAccountInfo as DevnetSystemAccountInfo,
     Twin as DevnetTwin,
 };
 
 use super::mainnet::mainnet::runtime_types::pallet_tfgrid::types::EntityProof as MainnetEntityProof;
-use super::mainnet::mainnet::runtime_types::tfchain_support::types::{FarmCertification as MainnetFarmCertification, NodeCertification as MainnetNodeCertification};
+use super::mainnet::mainnet::runtime_types::tfchain_support::types::{
+    FarmCertification as MainnetFarmCertification, NodeCertification as MainnetNodeCertification,
+};
 use super::mainnet::{
-    Farm as MainnetFarm, SystemAccountInfo as MainnetSystemAccountInfo, Twin as MainnetTwin, Node as MainnetNode,
+    Farm as MainnetFarm, Node as MainnetNode, SystemAccountInfo as MainnetSystemAccountInfo,
+    Twin as MainnetTwin,
 };
 
 use super::testnet::testnet::runtime_types::pallet_tfgrid::types::EntityProof as TestnetEntityProof;
-use super::testnet::testnet::runtime_types::tfchain_support::types::{FarmCertification as TestnetFarmCertification, NodeCertification as TestnetNodeCertification};
+use super::testnet::testnet::runtime_types::tfchain_support::types::{
+    FarmCertification as TestnetFarmCertification, NodeCertification as TestnetNodeCertification,
+};
 use super::testnet::{
-    Farm as TestnetFarm, SystemAccountInfo as TestnetSystemAccountInfo, Twin as TestnetTwin, Node as TestnetNode
+    Farm as TestnetFarm, Node as TestnetNode, SystemAccountInfo as TestnetSystemAccountInfo,
+    Twin as TestnetTwin,
 };
 
 pub type Hash = <PolkadotConfig as Config>::Hash;
 pub type BlockNumber = subxt::rpc::BlockNumber;
 
-#[derive(Debug, Clone)]
+#[macro_export]
+macro_rules! parse_vec_u8 {
+    ($input:expr) => {
+        String::from_utf8($input).expect("Found invalid UTF-8")
+    };
+}
 
+#[derive(Debug, Clone)]
 pub struct TfgridFarm {
     pub version: u32,
     pub id: u32,
@@ -150,7 +164,7 @@ pub struct FarmingPolicyLimit {
 
 impl From<MainnetFarm> for TfgridFarm {
     fn from(farm: MainnetFarm) -> Self {
-        let farm_name = String::from_utf8(farm.name.0).expect("Found invalid UTF-8");
+        let farm_name = parse_vec_u8!(farm.name.0);
 
         let limit: Option<FarmingPolicyLimit> = match farm.farming_policy_limits {
             Some(lim) => Some(FarmingPolicyLimit {
@@ -167,8 +181,8 @@ impl From<MainnetFarm> for TfgridFarm {
         let mut public_ips = vec![];
         for ip in farm.public_ips {
             public_ips.push(FarmPublicIP {
-                ip: String::from_utf8(ip.ip.0).expect("Found invalid UTF-8"),
-                gateway: String::from_utf8(ip.gateway.0).expect("Found invalid UTF-8"),
+                ip: parse_vec_u8!(ip.ip.0),
+                gateway: parse_vec_u8!(ip.gateway.0),
                 contract_id: ip.contract_id,
             })
         }
@@ -194,7 +208,7 @@ impl From<MainnetFarm> for TfgridFarm {
 
 impl From<TestnetFarm> for TfgridFarm {
     fn from(farm: TestnetFarm) -> Self {
-        let farm_name = String::from_utf8(farm.name.0).expect("Found invalid UTF-8");
+        let farm_name = parse_vec_u8!(farm.name.0);
 
         let limit: Option<FarmingPolicyLimit> = match farm.farming_policy_limits {
             Some(lim) => Some(FarmingPolicyLimit {
@@ -211,8 +225,8 @@ impl From<TestnetFarm> for TfgridFarm {
         let mut public_ips = vec![];
         for ip in farm.public_ips {
             public_ips.push(FarmPublicIP {
-                ip: String::from_utf8(ip.ip.0).expect("Found invalid UTF-8"),
-                gateway: String::from_utf8(ip.gateway.0).expect("Found invalid UTF-8"),
+                ip: parse_vec_u8!(ip.ip.0),
+                gateway: parse_vec_u8!(ip.gateway.0),
                 contract_id: ip.contract_id,
             })
         }
@@ -238,7 +252,7 @@ impl From<TestnetFarm> for TfgridFarm {
 
 impl From<DevnetFarm> for TfgridFarm {
     fn from(farm: DevnetFarm) -> Self {
-        let farm_name = String::from_utf8(farm.name.0).expect("Found invalid UTF-8");
+        let farm_name = parse_vec_u8!(farm.name.0);
 
         let limit: Option<FarmingPolicyLimit> = match farm.farming_policy_limits {
             Some(lim) => Some(FarmingPolicyLimit {
@@ -255,8 +269,8 @@ impl From<DevnetFarm> for TfgridFarm {
         let mut public_ips = vec![];
         for ip in farm.public_ips {
             public_ips.push(FarmPublicIP {
-                ip: String::from_utf8(ip.ip.0).expect("Found invalid UTF-8"),
-                gateway: String::from_utf8(ip.gateway.0).expect("Found invalid UTF-8"),
+                ip: parse_vec_u8!(ip.ip.0),
+                gateway: parse_vec_u8!(ip.gateway.0),
                 contract_id: ip.contract_id,
             })
         }
@@ -289,18 +303,18 @@ impl From<DevnetNode> for TfgridNode {
         resources.total_resources.sru = node.resources.sru;
 
         let location = Location {
-            city: String::from_utf8(node.city).expect("valid city"),
-            country: String::from_utf8(node.country).expect("valid city"),
-            latitude: String::from_utf8(node.location.latitude).expect("valid city"),
-            longitude: String::from_utf8(node.location.longitude).expect("valid city"),
+            city: parse_vec_u8!(node.city),
+            country: parse_vec_u8!(node.country),
+            latitude: parse_vec_u8!(node.location.latitude),
+            longitude: parse_vec_u8!(node.location.longitude),
         };
 
         let public_config = match node.public_config {
             Some(config) => {
                 let mut pub_conf = PublicConfig {
                     ip4: IP {
-                        ip: String::from_utf8(config.ip4.ip.0).expect("valid utf-8"),
-                        gw: String::from_utf8(config.ip4.gw.0).expect("valid utf-8"),
+                        ip: parse_vec_u8!(config.ip4.ip.0),
+                        gw: parse_vec_u8!(config.ip4.gw.0),
                     },
                     ip6: None,
                     domain: None,
@@ -308,14 +322,14 @@ impl From<DevnetNode> for TfgridNode {
 
                 pub_conf.ip6 = match config.ip6 {
                     Some(conf6) => Some(IP {
-                        ip: String::from_utf8(conf6.ip.0).expect("valid utf-8"),
-                        gw: String::from_utf8(conf6.gw.0).expect("valid utf-8"),
+                        ip: parse_vec_u8!(conf6.ip.0),
+                        gw: parse_vec_u8!(conf6.gw.0),
                     }),
                     None => None,
                 };
 
                 pub_conf.domain = match config.domain {
-                    Some(domain) => Some(String::from_utf8(domain.0).expect("valid utf-8")),
+                    Some(domain) => Some(parse_vec_u8!(domain.0)),
                     None => None,
                 };
 
@@ -328,14 +342,13 @@ impl From<DevnetNode> for TfgridNode {
             .interfaces
             .into_iter()
             .map(|intf| {
-                let ips = intf.ips.into_iter().map(|ip| String::from_utf8(ip.0).expect("valid utf-8")).collect();
+                let ips = intf.ips.into_iter().map(|ip| parse_vec_u8!(ip.0)).collect();
                 Interface {
-                    name: String::from_utf8(intf.name.0).expect("valid utf-8"),
-                    mac: String::from_utf8(intf.mac.0).expect("valid utf-8"),
-                    ips
+                    name: parse_vec_u8!(intf.name.0),
+                    mac: parse_vec_u8!(intf.mac.0),
+                    ips,
                 }
-            } 
-        )
+            })
             .collect();
 
         let certification = match node.certification {
@@ -361,12 +374,11 @@ impl From<DevnetNode> for TfgridNode {
             interfaces,
             certification,
             secure_boot: node.secure_boot,
-            serial_number: Some(String::from_utf8(node.serial_number).expect("valid utf-8")),
+            serial_number: Some(parse_vec_u8!(node.serial_number)),
             connection_price: node.connection_price,
         }
     }
 }
-
 
 impl From<TestnetNode> for TfgridNode {
     fn from(node: TestnetNode) -> Self {
@@ -377,18 +389,18 @@ impl From<TestnetNode> for TfgridNode {
         resources.total_resources.sru = node.resources.sru;
 
         let location = Location {
-            city: String::from_utf8(node.city).expect("valid city"),
-            country: String::from_utf8(node.country).expect("valid city"),
-            latitude: String::from_utf8(node.location.latitude).expect("valid city"),
-            longitude: String::from_utf8(node.location.longitude).expect("valid city"),
+            city: parse_vec_u8!(node.city),
+            country: parse_vec_u8!(node.country),
+            latitude: parse_vec_u8!(node.location.latitude),
+            longitude: parse_vec_u8!(node.location.longitude),
         };
 
         let public_config = match node.public_config {
             Some(config) => {
                 let mut pub_conf = PublicConfig {
                     ip4: IP {
-                        ip: String::from_utf8(config.ip4.ip.0).expect("valid utf-8"),
-                        gw: String::from_utf8(config.ip4.gw.0).expect("valid utf-8"),
+                        ip: parse_vec_u8!(config.ip4.ip.0),
+                        gw: parse_vec_u8!(config.ip4.gw.0),
                     },
                     ip6: None,
                     domain: None,
@@ -396,14 +408,14 @@ impl From<TestnetNode> for TfgridNode {
 
                 pub_conf.ip6 = match config.ip6 {
                     Some(conf6) => Some(IP {
-                        ip: String::from_utf8(conf6.ip.0).expect("valid utf-8"),
-                        gw: String::from_utf8(conf6.gw.0).expect("valid utf-8"),
+                        ip: parse_vec_u8!(conf6.ip.0),
+                        gw: parse_vec_u8!(conf6.gw.0),
                     }),
                     None => None,
                 };
 
                 pub_conf.domain = match config.domain {
-                    Some(domain) => Some(String::from_utf8(domain.0).expect("valid utf-8")),
+                    Some(domain) => Some(parse_vec_u8!(domain.0)),
                     None => None,
                 };
 
@@ -416,14 +428,13 @@ impl From<TestnetNode> for TfgridNode {
             .interfaces
             .into_iter()
             .map(|intf| {
-                let ips = intf.ips.into_iter().map(|ip| String::from_utf8(ip.0).expect("valid utf-8")).collect();
+                let ips = intf.ips.into_iter().map(|ip| parse_vec_u8!(ip.0)).collect();
                 Interface {
-                    name: String::from_utf8(intf.name.0).expect("valid utf-8"),
-                    mac: String::from_utf8(intf.mac.0).expect("valid utf-8"),
-                    ips
+                    name: parse_vec_u8!(intf.name.0),
+                    mac: parse_vec_u8!(intf.mac.0),
+                    ips,
                 }
-            } 
-        )
+            })
             .collect();
 
         let certification = match node.certification {
@@ -449,12 +460,11 @@ impl From<TestnetNode> for TfgridNode {
             interfaces,
             certification,
             secure_boot: node.secure_boot,
-            serial_number: Some(String::from_utf8(node.serial_number).expect("valid utf-8")),
+            serial_number: Some(parse_vec_u8!(node.serial_number)),
             connection_price: node.connection_price,
         }
     }
 }
-
 
 impl From<MainnetNode> for TfgridNode {
     fn from(node: MainnetNode) -> Self {
@@ -465,18 +475,18 @@ impl From<MainnetNode> for TfgridNode {
         resources.total_resources.sru = node.resources.sru;
 
         let location = Location {
-            city: String::from_utf8(node.city).expect("valid city"),
-            country: String::from_utf8(node.country).expect("valid city"),
-            latitude: String::from_utf8(node.location.latitude).expect("valid city"),
-            longitude: String::from_utf8(node.location.longitude).expect("valid city"),
+            city: parse_vec_u8!(node.city),
+            country: parse_vec_u8!(node.country),
+            latitude: parse_vec_u8!(node.location.latitude),
+            longitude: parse_vec_u8!(node.location.longitude),
         };
 
         let public_config = match node.public_config {
             Some(config) => {
                 let mut pub_conf = PublicConfig {
                     ip4: IP {
-                        ip: String::from_utf8(config.ip4.ip.0).expect("valid utf-8"),
-                        gw: String::from_utf8(config.ip4.gw.0).expect("valid utf-8"),
+                        ip: parse_vec_u8!(config.ip4.ip.0),
+                        gw: parse_vec_u8!(config.ip4.gw.0),
                     },
                     ip6: None,
                     domain: None,
@@ -484,14 +494,14 @@ impl From<MainnetNode> for TfgridNode {
 
                 pub_conf.ip6 = match config.ip6 {
                     Some(conf6) => Some(IP {
-                        ip: String::from_utf8(conf6.ip.0).expect("valid utf-8"),
-                        gw: String::from_utf8(conf6.gw.0).expect("valid utf-8"),
+                        ip: parse_vec_u8!(conf6.ip.0),
+                        gw: parse_vec_u8!(conf6.gw.0),
                     }),
                     None => None,
                 };
 
                 pub_conf.domain = match config.domain {
-                    Some(domain) => Some(String::from_utf8(domain.0).expect("valid utf-8")),
+                    Some(domain) => Some(parse_vec_u8!(domain.0)),
                     None => None,
                 };
 
@@ -504,14 +514,13 @@ impl From<MainnetNode> for TfgridNode {
             .interfaces
             .into_iter()
             .map(|intf| {
-                let ips = intf.ips.into_iter().map(|ip| String::from_utf8(ip.0).expect("valid utf-8")).collect();
+                let ips = intf.ips.into_iter().map(|ip| parse_vec_u8!(ip.0)).collect();
                 Interface {
-                    name: String::from_utf8(intf.name.0).expect("valid utf-8"),
-                    mac: String::from_utf8(intf.mac.0).expect("valid utf-8"),
-                    ips
+                    name: parse_vec_u8!(intf.name.0),
+                    mac: parse_vec_u8!(intf.mac.0),
+                    ips,
                 }
-            } 
-        )
+            })
             .collect();
 
         let certification = match node.certification {
@@ -537,7 +546,7 @@ impl From<MainnetNode> for TfgridNode {
             interfaces,
             certification,
             secure_boot: node.secure_boot,
-            serial_number: Some(String::from_utf8(node.serial_number).expect("valid utf-8")),
+            serial_number: Some(parse_vec_u8!(node.serial_number)),
             connection_price: node.connection_price,
         }
     }
@@ -613,7 +622,7 @@ pub struct EntityProof {
 
 impl From<DevnetTwin> for Twin {
     fn from(twin: DevnetTwin) -> Self {
-        let ip = String::from_utf8(twin.ip.0).expect("Found invalid UTF-8");
+        let ip = parse_vec_u8!(twin.ip.0);
         let entities = twin.entities.into_iter().map(|e| e.into()).collect();
 
         Twin {
@@ -628,7 +637,7 @@ impl From<DevnetTwin> for Twin {
 
 impl From<DevnetEntityProof> for EntityProof {
     fn from(proof: DevnetEntityProof) -> Self {
-        let signature = String::from_utf8(proof.signature).expect("Found invalid UTF-8");
+        let signature = parse_vec_u8!(proof.signature);
         EntityProof {
             entity_id: proof.entity_id,
             signature,
@@ -638,7 +647,7 @@ impl From<DevnetEntityProof> for EntityProof {
 
 impl From<TestnetTwin> for Twin {
     fn from(twin: TestnetTwin) -> Self {
-        let ip = String::from_utf8(twin.ip.0).expect("Found invalid UTF-8");
+        let ip = parse_vec_u8!(twin.ip.0);
         let entities = twin.entities.into_iter().map(|e| e.into()).collect();
 
         Twin {
@@ -653,7 +662,7 @@ impl From<TestnetTwin> for Twin {
 
 impl From<TestnetEntityProof> for EntityProof {
     fn from(proof: TestnetEntityProof) -> Self {
-        let signature = String::from_utf8(proof.signature).expect("Found invalid UTF-8");
+        let signature = parse_vec_u8!(proof.signature);
         EntityProof {
             entity_id: proof.entity_id,
             signature,
@@ -663,7 +672,7 @@ impl From<TestnetEntityProof> for EntityProof {
 
 impl From<MainnetTwin> for Twin {
     fn from(twin: MainnetTwin) -> Self {
-        let ip = String::from_utf8(twin.ip.0).expect("Found invalid UTF-8");
+        let ip = parse_vec_u8!(twin.ip.0);
         let entities = twin.entities.into_iter().map(|e| e.into()).collect();
 
         Twin {
@@ -678,7 +687,8 @@ impl From<MainnetTwin> for Twin {
 
 impl From<MainnetEntityProof> for EntityProof {
     fn from(proof: MainnetEntityProof) -> Self {
-        let signature = String::from_utf8(proof.signature).expect("Found invalid UTF-8");
+        let signature = parse_vec_u8!(proof.signature);
+        // let signature = String::from_utf8(proof.signature);
         EntityProof {
             entity_id: proof.entity_id,
             signature,
