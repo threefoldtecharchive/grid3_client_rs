@@ -13,7 +13,7 @@ use super::devnet::devnet::runtime_types::tfchain_support::types::{
 };
 use super::devnet::{
     Farm as DevnetFarm, Node as DevnetNode, SystemAccountInfo as DevnetSystemAccountInfo,
-    Twin as DevnetTwin,
+    Twin as DevnetTwin, Contract as DevnetContract
 };
 
 use super::mainnet::mainnet::runtime_types::pallet_tfgrid::types::EntityProof as MainnetEntityProof;
@@ -144,7 +144,6 @@ pub struct Interface {
 }
 
 #[derive(Debug, Clone)]
-
 pub struct FarmPublicIP {
     pub ip: String,
     pub gateway: String,
@@ -152,7 +151,6 @@ pub struct FarmPublicIP {
 }
 
 #[derive(Debug, Clone)]
-
 pub struct FarmingPolicyLimit {
     pub farming_policy_id: u32,
     pub cu: Option<u64>,
@@ -160,6 +158,119 @@ pub struct FarmingPolicyLimit {
     pub end: Option<u64>,
     pub node_count: Option<u32>,
     pub node_certification: bool,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct Contract {
+    pub version: u32,
+    pub state: ContractState,
+    pub contract_id: u64,
+    pub twin_id: u32,
+    pub contract_type: ContractData,
+    pub solution_provider_id: Option<u64>,
+}
+
+#[derive(Debug, Clone)]
+pub enum ContractState {
+    Created,
+    Deleted(Cause),
+    GracePeriod(u32),
+}
+
+#[derive(Debug, Clone)]
+pub enum Cause {
+    CanceledByUser,
+    OutOfFunds,
+}
+
+impl Default for ContractState {
+    fn default() -> ContractState {
+        ContractState::Created
+    }
+}
+
+// HexHash is hex encoded hash
+pub type HexHash = [u8; 32];
+
+#[derive(Debug, Clone, Default)]
+pub struct NodeContract {
+    pub node_id: u32,
+    // Hash of the deployment, set by the user
+    // Max 32 bytes
+    pub deployment_hash: HexHash,
+    pub deployment_data: String,
+    pub public_ips: u32,
+    pub public_ips_list: Vec<IP>,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct NameContract {
+    pub name: String,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct RentContract {
+    pub node_id: u32,
+}
+
+#[derive(Debug, Clone)]
+pub enum ContractData {
+    NodeContract(NodeContract),
+    NameContract(NameContract),
+    RentContract(RentContract),
+}
+
+impl Default for ContractData {
+    fn default() -> ContractData {
+        ContractData::RentContract(RentContract::default())
+    }
+}
+
+impl From<DevnetContract> for Contract {
+    fn from(contract: DevnetContract) -> Self {
+        let mut ctr = Contract {
+            version: contract.version,
+            contract_id: contract.contract_id,
+            twin_id: contract.twin_id,
+            state: ContractState::Created,
+            solution_provider_id: contract.solution_provider_id,
+            contract_type: ContractData::default() 
+        };
+        
+        match contract.contract_type {
+            super::devnet::devnet::runtime_types::pallet_smart_contract::types::ContractData::NodeContract(nc) => {
+                
+                ctr.contract_type = ContractData::NodeContract(NodeContract{
+                    node_id: nc.node_id,
+                    deployment_data: parse_vec_u8!(nc.deployment_data),
+                    deployment_hash: nc.deployment_hash.into(),
+                    public_ips: nc.public_ips,
+                    public_ips_list: nc.public_ips_list.iter().map(|ip| IP {
+                        ip: parse_vec_u8!(ip.ip.0.clone()),
+                        gw: parse_vec_u8!(ip.gateway.0.clone())
+                    }).collect()
+                });
+            },
+            super::devnet::devnet::runtime_types::pallet_smart_contract::types::ContractData::NameContract(nmc) => {
+                ctr.contract_type = ContractData::NameContract(NameContract{ name: parse_vec_u8!(nmc.name.0) })
+            },
+            super::devnet::devnet::runtime_types::pallet_smart_contract::types::ContractData::RentContract(rc) => {
+                ctr.contract_type = ContractData::RentContract(RentContract { node_id: rc.node_id })
+            }
+        }
+        
+        match contract.state {
+            super::devnet::devnet::runtime_types::pallet_smart_contract::types::ContractState::Created => {
+                ctr.state = ContractState::Created
+            },
+            super::devnet::devnet::runtime_types::pallet_smart_contract::types::ContractState::GracePeriod(block) => {
+                ctr.state = ContractState::GracePeriod(block as u32)
+            },
+            _ => ()
+        };
+        
+        ctr
+    }
 }
 
 impl From<MainnetFarm> for TfgridFarm {
