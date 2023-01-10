@@ -1,8 +1,10 @@
 use crate::runtimes::{devnet, mainnet, testnet, types};
-use sp_core::crypto::SecretStringError;
-use sp_core::{crypto::AccountId32, ed25519, sr25519};
 use std::str::FromStr;
 use subxt::{
+    ext::{
+        sp_core::{crypto::SecretStringError, ed25519, sr25519, Pair},
+        sp_runtime::AccountId32,
+    },
     tx::{PairSigner, Signer},
     Error, OnlineClient, PolkadotConfig,
 };
@@ -45,12 +47,12 @@ impl FromStr for KeyType {
     }
 }
 
-pub enum Pair {
+pub enum KeyPair {
     Sr25519(sr25519::Pair),
     Ed25519(ed25519::Pair),
 }
 
-impl Pair {
+impl KeyPair {
     pub fn from_seed<S: AsRef<str>>(
         k: KeyType,
         seed: S,
@@ -63,13 +65,11 @@ impl Pair {
 
         let pair = match k {
             KeyType::Sr25519 => {
-                let (pair, _): (sr25519::Pair, _) =
-                    sp_core::Pair::from_string_with_seed(seed, password)?;
+                let (pair, _): (sr25519::Pair, _) = Pair::from_string_with_seed(seed, password)?;
                 Self::Sr25519(pair)
             }
             KeyType::Ed25519 => {
-                let (pair, _): (ed25519::Pair, _) =
-                    sp_core::Pair::from_string_with_seed(seed, password)?;
+                let (pair, _): (ed25519::Pair, _) = Pair::from_string_with_seed(seed, password)?;
                 Self::Ed25519(pair)
             }
         };
@@ -86,11 +86,11 @@ impl Pair {
 
         let pair = match k {
             KeyType::Sr25519 => {
-                let (pair, _): (sr25519::Pair, _) = sp_core::Pair::from_phrase(phrase, password)?;
+                let (pair, _): (sr25519::Pair, _) = Pair::from_phrase(phrase, password)?;
                 Self::Sr25519(pair)
             }
             KeyType::Ed25519 => {
-                let (pair, _): (ed25519::Pair, _) = sp_core::Pair::from_phrase(phrase, password)?;
+                let (pair, _): (ed25519::Pair, _) = Pair::from_phrase(phrase, password)?;
                 Self::Ed25519(pair)
             }
         };
@@ -106,13 +106,13 @@ impl Pair {
     }
 }
 
-impl From<sr25519::Pair> for Pair {
+impl From<sr25519::Pair> for KeyPair {
     fn from(value: sr25519::Pair) -> Self {
         Self::Sr25519(value)
     }
 }
 
-impl From<ed25519::Pair> for Pair {
+impl From<ed25519::Pair> for KeyPair {
     fn from(value: ed25519::Pair) -> Self {
         Self::Ed25519(value)
     }
@@ -120,7 +120,7 @@ impl From<ed25519::Pair> for Pair {
 
 pub struct Client {
     pub runtime: Runtime,
-    pub pair: Pair,
+    pub pair: KeyPair,
     pub api: OnlineClient<PolkadotConfig>,
 }
 
@@ -135,7 +135,7 @@ macro_rules! call {
 }
 
 impl Client {
-    pub async fn new(url: String, pair: Pair, runtime: Runtime) -> Result<Client, Error> {
+    pub async fn new(url: String, pair: KeyPair, runtime: Runtime) -> Result<Client, Error> {
         let api = OnlineClient::<PolkadotConfig>::from_url(url).await?;
 
         Ok(Client { pair, api, runtime })

@@ -14,8 +14,8 @@ path = "src/main.rs"
 name = "tfchain_cli"
 
 [dependencies]
-subxt = "0.23.0"
-subxt-codegen = "0.23.0"
+subxt = "0.25.0"
+subxt-codegen = "0.25.0"
 syn = "1.0.99"
 tokio = { version = "1.8", features = ["rt-multi-thread", "macros", "time"] }
 futures-util = "0.3.23"
@@ -24,14 +24,9 @@ futures = "0.3.23"
 serde = "1.0.147"
 
 # Substrate dependencies
-sp-core = "6.0.0"
 frame-metadata = "15.0.0"
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive", "full", "bit-vec"] }
-frame-support = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.24" }
-sp-std =  { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.24" }
-sp-runtime =  { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.24" }
-frame-system =  { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.24" }
-pallet-balances =  { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.24" }
-
-# Tfchain dependencies
-tfchain-support = { git = "https://github.com/threefoldtech/tfchain" }
+frame-support = { version = "10.0.0" }
+sp-std =  { version = "6.0.0" }
+frame-system =  { version = "10.0.0" }
+pallet-balances =  { version = "10.0.0" }

@@ -1,11 +1,8 @@
 use serde::{Deserialize, Serialize};
-use sp_core::crypto::AccountId32;
-use subxt::{Config, PolkadotConfig};
+use subxt::{ext::sp_runtime::AccountId32, Config, PolkadotConfig};
 
 use frame_system::AccountInfo;
 use pallet_balances::AccountData;
-
-use tfchain_support::types::FarmCertification as SupportFarmCertification;
 
 use super::devnet::devnet::runtime_types::pallet_tfgrid::types::EntityProof as DevnetEntityProof;
 use super::devnet::devnet::runtime_types::tfchain_support::types::{
@@ -45,13 +42,19 @@ macro_rules! parse_vec_u8 {
 }
 
 #[derive(Debug, Clone)]
+pub enum FarmCertification {
+    NotCertified,
+    Gold,
+}
+
+#[derive(Debug, Clone)]
 pub struct TfgridFarm {
     pub version: u32,
     pub id: u32,
     pub name: String,
     pub twin_id: u32,
     pub pricing_policy_id: u32,
-    pub certification: SupportFarmCertification,
+    pub certification: FarmCertification,
     pub dedicated_farm: bool,
     pub farming_policy_limits: Option<FarmingPolicyLimit>,
     pub public_ips: Vec<FarmPublicIP>,
@@ -242,17 +245,17 @@ impl From<DevnetContract> for Contract {
 
                 ctr.contract_type = ContractData::NodeContract(NodeContract{
                     node_id: nc.node_id,
-                    deployment_data: parse_vec_u8!(nc.deployment_data),
+                    deployment_data: parse_vec_u8!(nc.deployment_data.0),
                     deployment_hash: nc.deployment_hash.into(),
                     public_ips: nc.public_ips,
-                    public_ips_list: nc.public_ips_list.iter().map(|ip| IP {
+                    public_ips_list: nc.public_ips_list.0.iter().map(|ip| IP {
                         ip: parse_vec_u8!(ip.ip.0.clone()),
                         gw: parse_vec_u8!(ip.gateway.0.clone())
                     }).collect()
                 });
             },
             super::devnet::devnet::runtime_types::pallet_smart_contract::types::ContractData::NameContract(nmc) => {
-                ctr.contract_type = ContractData::NameContract(NameContract{ name: parse_vec_u8!(nmc.name.0) })
+                ctr.contract_type = ContractData::NameContract(NameContract{ name: parse_vec_u8!(nmc.name.0.0) })
             },
             super::devnet::devnet::runtime_types::pallet_smart_contract::types::ContractData::RentContract(rc) => {
                 ctr.contract_type = ContractData::RentContract(RentContract { node_id: rc.node_id })
@@ -392,9 +395,9 @@ impl From<MainnetFarm> for TfgridFarm {
             })
         }
 
-        let farm_certification: SupportFarmCertification = match farm.certification {
-            MainnetFarmCertification::Gold => SupportFarmCertification::Gold,
-            MainnetFarmCertification::NotCertified => SupportFarmCertification::NotCertified,
+        let farm_certification: FarmCertification = match farm.certification {
+            MainnetFarmCertification::Gold => FarmCertification::Gold,
+            MainnetFarmCertification::NotCertified => FarmCertification::NotCertified,
         };
 
         TfgridFarm {
@@ -436,9 +439,9 @@ impl From<TestnetFarm> for TfgridFarm {
             })
         }
 
-        let farm_certification: SupportFarmCertification = match farm.certification {
-            TestnetFarmCertification::Gold => SupportFarmCertification::Gold,
-            TestnetFarmCertification::NotCertified => SupportFarmCertification::NotCertified,
+        let farm_certification: FarmCertification = match farm.certification {
+            TestnetFarmCertification::Gold => FarmCertification::Gold,
+            TestnetFarmCertification::NotCertified => FarmCertification::NotCertified,
         };
 
         TfgridFarm {
@@ -457,7 +460,7 @@ impl From<TestnetFarm> for TfgridFarm {
 
 impl From<DevnetFarm> for TfgridFarm {
     fn from(farm: DevnetFarm) -> Self {
-        let farm_name = parse_vec_u8!(farm.name.0);
+        let farm_name = parse_vec_u8!(farm.name.0 .0);
 
         let limit: Option<FarmingPolicyLimit> = match farm.farming_policy_limits {
             Some(lim) => Some(FarmingPolicyLimit {
@@ -472,7 +475,7 @@ impl From<DevnetFarm> for TfgridFarm {
         };
 
         let mut public_ips = vec![];
-        for ip in farm.public_ips {
+        for ip in farm.public_ips.0 {
             public_ips.push(FarmPublicIP {
                 ip: parse_vec_u8!(ip.ip.0),
                 gateway: parse_vec_u8!(ip.gateway.0),
@@ -480,9 +483,9 @@ impl From<DevnetFarm> for TfgridFarm {
             })
         }
 
-        let farm_certification: SupportFarmCertification = match farm.certification {
-            DevnetFarmCertification::Gold => SupportFarmCertification::Gold,
-            DevnetFarmCertification::NotCertified => SupportFarmCertification::NotCertified,
+        let farm_certification: FarmCertification = match farm.certification {
+            DevnetFarmCertification::Gold => FarmCertification::Gold,
+            DevnetFarmCertification::NotCertified => FarmCertification::NotCertified,
         };
 
         TfgridFarm {
@@ -508,10 +511,10 @@ impl From<DevnetNode> for TfgridNode {
         resources.total_resources.sru = node.resources.sru;
 
         let location = Location {
-            city: parse_vec_u8!(node.city),
-            country: parse_vec_u8!(node.country),
-            latitude: parse_vec_u8!(node.location.latitude),
-            longitude: parse_vec_u8!(node.location.longitude),
+            city: parse_vec_u8!(node.location.city.0 .0),
+            country: parse_vec_u8!(node.location.country.0 .0),
+            latitude: parse_vec_u8!(node.location.latitude.0),
+            longitude: parse_vec_u8!(node.location.longitude.0),
         };
 
         let public_config = match node.public_config {
@@ -547,10 +550,15 @@ impl From<DevnetNode> for TfgridNode {
             .interfaces
             .into_iter()
             .map(|intf| {
-                let ips = intf.ips.into_iter().map(|ip| parse_vec_u8!(ip.0)).collect();
+                let ips = intf
+                    .ips
+                    .0
+                    .into_iter()
+                    .map(|ip| parse_vec_u8!(ip.0 .0))
+                    .collect();
                 Interface {
-                    name: parse_vec_u8!(intf.name.0),
-                    mac: parse_vec_u8!(intf.mac.0),
+                    name: parse_vec_u8!(intf.name.0 .0),
+                    mac: parse_vec_u8!(intf.mac.0 .0),
                     ips,
                 }
             })
@@ -559,6 +567,11 @@ impl From<DevnetNode> for TfgridNode {
         let certification = match node.certification {
             DevnetNodeCertification::Certified => NodeCertification::Certified,
             DevnetNodeCertification::Diy => NodeCertification::Diy,
+        };
+
+        let serial_number = match node.serial_number {
+            Some(s) => Some(parse_vec_u8!(s.0 .0)),
+            None => None,
         };
 
         TfgridNode {
@@ -579,7 +592,7 @@ impl From<DevnetNode> for TfgridNode {
             interfaces,
             certification,
             secure_boot: node.secure_boot,
-            serial_number: Some(parse_vec_u8!(node.serial_number)),
+            serial_number,
             connection_price: node.connection_price,
         }
     }
@@ -812,11 +825,11 @@ impl From<DevnetSystemAccountInfo> for SystemAccountInfo {
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct Twin {
-    version: u32,
     id: u32,
     account_id: AccountId32,
-    ip: String,
+    relay: String,
     entities: Vec<EntityProof>,
+    pk: String,
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
@@ -827,15 +840,16 @@ pub struct EntityProof {
 
 impl From<DevnetTwin> for Twin {
     fn from(twin: DevnetTwin) -> Self {
-        let ip = parse_vec_u8!(twin.ip.0);
+        let relay = parse_vec_u8!(twin.relay.0);
+        let pk = parse_vec_u8!(twin.pk.0);
         let entities = twin.entities.into_iter().map(|e| e.into()).collect();
 
         Twin {
-            version: twin.version,
             id: twin.id,
             account_id: twin.account_id,
-            ip,
+            relay,
             entities,
+            pk,
         }
     }
 }
@@ -856,11 +870,11 @@ impl From<TestnetTwin> for Twin {
         let entities = twin.entities.into_iter().map(|e| e.into()).collect();
 
         Twin {
-            version: twin.version,
             id: twin.id,
             account_id: twin.account_id,
-            ip,
+            relay: ip,
             entities,
+            pk: String::from(""),
         }
     }
 }
@@ -881,11 +895,11 @@ impl From<MainnetTwin> for Twin {
         let entities = twin.entities.into_iter().map(|e| e.into()).collect();
 
         Twin {
-            version: twin.version,
             id: twin.id,
             account_id: twin.account_id,
-            ip,
+            relay: ip,
             entities,
+            pk: String::from(""),
         }
     }
 }

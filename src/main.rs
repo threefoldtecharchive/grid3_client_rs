@@ -77,18 +77,18 @@
 pub mod client;
 pub mod runtimes;
 use client::BlockNumber;
-use sp_core::crypto::AccountId32;
+use subxt::ext::sp_core::crypto::AccountId32;
 
-use client::{KeyType, Pair, Runtime};
+use client::{KeyPair, KeyType, Runtime};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let phrase = "oyster orient plunge devote light wrap hold mother essence casino rebel distance";
-    let p =
-        Pair::from_phrase(KeyType::Sr25519, phrase, None).expect("failed to get key from phrase");
+    let p = KeyPair::from_phrase(KeyType::Sr25519, phrase, None)
+        .expect("failed to get key from phrase");
 
     let seed = "0x9917ea107aca8e9c29f4530413b41333ada03cf39fede45cde611b943e2e8dd1";
-    let _ = Pair::from_seed(KeyType::Sr25519, seed, None);
+    let _ = KeyPair::from_seed(KeyType::Sr25519, seed, None);
 
     let cl = client::Client::new(
         String::from("wss://tfchain.grid.tf:443"),

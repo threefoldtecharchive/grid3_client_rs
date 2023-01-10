@@ -2,6 +2,8 @@
 pub mod devnet {
     #[subxt(substitute_type = "frame_support::storage::bounded_vec::BoundedVec")]
     use ::sp_std::vec::Vec;
+    #[subxt(substitute_type = "bounded::bounded::BoundedVec")]
+    use ::sp_std::vec::Vec;
 }
 use super::types;
 pub use devnet::runtime_types::frame_system::AccountInfo;
@@ -10,27 +12,26 @@ pub use devnet::runtime_types::pallet_smart_contract::types::Contract;
 pub use devnet::runtime_types::pallet_tfgrid::{
     farm::FarmName,
     interface::{InterfaceIp, InterfaceMac, InterfaceName},
-    pub_config::{Domain, GW4, GW6, IP4, IP6},
-    pub_ip::{GatewayIP, PublicIP},
-    twin::TwinIp,
+    node::{Location, SerialNumber},
     types::Twin as TwinData,
 };
 pub use devnet::runtime_types::tfchain_support::types::{
-    Farm as FarmData, Interface, Node as NodeData, PublicConfig, PublicIP as PublicIpData, IP,
+    Farm as FarmData, Interface, Node as NodeData, PublicConfig, PublicIP as PublicIpData,
 };
-use sp_core::{crypto::AccountId32, H256};
+use subxt::ext::{sp_core::H256, sp_runtime::AccountId32};
+
 use subxt::Error;
 
-pub type Twin = TwinData<TwinIp, sp_core::crypto::AccountId32>;
+use devnet::runtime_types::sp_core::bounded::bounded_vec::BoundedVec;
 
-pub type PublicIpOf = PublicIpData<PublicIP, GatewayIP>;
-pub type Farm = FarmData<FarmName, PublicIpOf>;
+pub type Twin = TwinData<AccountId32>;
 
-pub type IPv4 = IP<IP4, GW4>;
-pub type IPv6 = IP<IP6, GW6>;
-pub type PublicConfigOf = PublicConfig<IPv4, Option<IPv6>, Option<Domain>>;
-pub type InterfaceOf = Interface<InterfaceName, InterfaceMac, Vec<InterfaceIp>>;
-pub type Node = NodeData<PublicConfigOf, InterfaceOf>;
+pub type Farm = FarmData<FarmName>;
+
+pub type InterfaceOf = Interface<InterfaceName, InterfaceMac, BoundedVec<InterfaceIp>>;
+pub type Node = NodeData<Location, InterfaceOf, SerialNumber>;
+
+pub type SystemAccountInfo = AccountInfo<u32, AccountData<u128>>;
 
 use crate::client::Client;
 
@@ -38,12 +39,22 @@ pub use devnet::tft_bridge_module::events::BurnTransactionReady;
 pub use devnet::tft_bridge_module::events::BurnTransactionSignatureAdded;
 pub use devnet::tft_bridge_module::events::MintTransactionProposed;
 
-pub type SystemAccountInfo = AccountInfo<u32, AccountData<u128>>;
+pub async fn create_twin(
+    cl: &Client,
+    relay: Option<String>,
+    pk: Option<String>,
+) -> Result<H256, Error> {
+    let r = match relay {
+        Some(rel) => BoundedVec(rel.as_bytes().to_vec()),
+        None => BoundedVec(Vec::new()),
+    };
 
-pub async fn create_twin(cl: &Client, ip: String) -> Result<H256, Error> {
-    let create_twin_tx = devnet::tx()
-        .tfgrid_module()
-        .create_twin(ip.as_bytes().to_vec());
+    let p = match pk {
+        Some(pubk) => BoundedVec(pubk.as_bytes().to_vec()),
+        None => BoundedVec(Vec::new()),
+    };
+
+    let create_twin_tx = devnet::tx().tfgrid_module().create_twin(r, p);
     let signer = cl.pair.signer();
 
     cl.api
@@ -58,8 +69,8 @@ pub async fn sign_terms_and_conditions(
     document_hash: String,
 ) -> Result<H256, Error> {
     let create_twin_tx = devnet::tx().tfgrid_module().user_accept_tc(
-        document_link.as_bytes().to_vec(),
-        document_hash.as_bytes().to_vec(),
+        BoundedVec(document_link.as_bytes().to_vec()),
+        BoundedVec(document_hash.as_bytes().to_vec()),
     );
     let signer = cl.pair.signer();
     cl.api

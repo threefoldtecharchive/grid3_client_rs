@@ -18,10 +18,11 @@ pub use mainnet::runtime_types::pallet_tfgrid::{
 pub use mainnet::runtime_types::tfchain_support::types::{
     Farm as FarmData, Interface, Node as NodeData, PublicConfig, PublicIP as PublicIpData, IP,
 };
-use sp_core::{crypto::AccountId32, H256};
+use subxt::ext::{sp_core::H256, sp_runtime::AccountId32};
+
 use subxt::Error;
 
-pub type Twin = TwinData<TwinIp, sp_core::crypto::AccountId32>;
+pub type Twin = TwinData<TwinIp, AccountId32>;
 
 pub type PublicIpOf = PublicIpData<PublicIP, GatewayIP>;
 pub type Farm = FarmData<FarmName, PublicIpOf>;

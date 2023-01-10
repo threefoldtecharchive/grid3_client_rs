@@ -4,7 +4,7 @@ pub mod testnet {
     use ::sp_std::vec::Vec;
 }
 use super::types;
-use sp_core::{crypto::AccountId32, H256};
+use subxt::ext::{sp_core::H256, sp_runtime::AccountId32};
 use subxt::Error;
 pub use testnet::runtime_types::frame_system::AccountInfo;
 pub use testnet::runtime_types::pallet_balances::AccountData;
@@ -21,7 +21,7 @@ pub use testnet::runtime_types::tfchain_support::types::{
     Farm as FarmData, Interface, Node as NodeData, PublicConfig, PublicIP as PublicIpData, IP,
 };
 
-pub type Twin = TwinData<TwinIp, sp_core::crypto::AccountId32>;
+pub type Twin = TwinData<TwinIp, AccountId32>;
 
 pub type PublicIpOf = PublicIpData<PublicIP, GatewayIP>;
 pub type Farm = FarmData<FarmName, PublicIpOf>;
@@ -106,7 +106,7 @@ pub async fn get_contract_by_id(
         .storage()
         .fetch(
             &testnet::storage().smart_contract_module().contracts(id),
-            None,
+            at_block,
         )
         .await?
         .map(types::Contract::from))
