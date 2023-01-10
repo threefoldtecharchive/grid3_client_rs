@@ -30,7 +30,6 @@ codec = { package = "parity-scale-codec", version = "3.0.0", default-features = 
 frame-support = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.24" }
 sp-std =  { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.24" }
 sp-runtime =  { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.24" }
-regex = "1.6.0"
 frame-system =  { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.24" }
 pallet-balances =  { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.24" }
 
