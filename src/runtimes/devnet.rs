@@ -81,6 +81,22 @@ pub async fn get_twin_by_id(
         .map(types::Twin::from))
 }
 
+pub async fn get_twin_id_by_account(
+    cl: &Client,
+    account: AccountId32,
+    at_block: Option<types::Hash>,
+) -> Result<Option<u32>, Error> {
+    cl.api
+        .storage()
+        .fetch(
+            &devnet::storage()
+                .tfgrid_module()
+                .twin_id_by_account_id(account),
+            at_block,
+        )
+        .await
+}
+
 pub async fn get_contract_by_id(
     cl: &Client,
     id: u64,

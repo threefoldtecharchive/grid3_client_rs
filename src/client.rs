@@ -149,6 +149,14 @@ impl Client {
         call!(self, get_twin_by_id, id, at_block)
     }
 
+    pub async fn get_twin_id_by_account(
+        &self,
+        account: AccountId32,
+        at_block: Option<types::Hash>,
+    ) -> Result<Option<u32>, Error> {
+        call!(self, get_twin_id_by_account, account, at_block)
+    }
+
     pub async fn get_farm_by_id(
         &self,
         id: u32,
