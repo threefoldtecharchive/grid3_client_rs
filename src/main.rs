@@ -79,17 +79,23 @@ pub mod runtimes;
 use client::BlockNumber;
 use sp_core::crypto::AccountId32;
 
+use client::{KeyType, Pair, Runtime};
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let phrase = "oyster orient plunge devote light wrap hold mother essence casino rebel distance";
-    let p = client::get_from_seed(phrase, None);
+    let p =
+        Pair::from_phrase(KeyType::Sr25519, phrase, None).expect("failed to get key from phrase");
 
     let seed = "0x9917ea107aca8e9c29f4530413b41333ada03cf39fede45cde611b943e2e8dd1";
-    let _ = client::get_from_seed(seed, None);
+    let _ = Pair::from_seed(KeyType::Sr25519, seed, None);
 
-    let network = "mainnet";
-
-    let cl = client::TfchainClient::new(String::from("wss://tfchain.grid.tf:443"), p, network).await?;
+    let cl = client::Client::new(
+        String::from("wss://tfchain.grid.tf:443"),
+        p,
+        Runtime::Mainnet,
+    )
+    .await?;
 
     // println!("trying to submit tand call");
     // let hash = cl
@@ -115,7 +121,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .parse::<AccountId32>()
         .unwrap();
 
-    let block_1 = cl.get_block_hash(Some(BlockNumber::from(1 as u32))).await?;
+    let block_1 = cl.get_block_hash(Some(BlockNumber::from(1_u32))).await?;
     println!("block 1 hash {:?}", block_1);
 
     let balance_at_block_1 = cl.get_balance(&account, block_1).await;

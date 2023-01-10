@@ -12,8 +12,8 @@ use super::devnet::devnet::runtime_types::tfchain_support::types::{
     FarmCertification as DevnetFarmCertification, NodeCertification as DevnetNodeCertification,
 };
 use super::devnet::{
-    Farm as DevnetFarm, Node as DevnetNode, SystemAccountInfo as DevnetSystemAccountInfo,
-    Twin as DevnetTwin, Contract as DevnetContract
+    Contract as DevnetContract, Farm as DevnetFarm, Node as DevnetNode,
+    SystemAccountInfo as DevnetSystemAccountInfo, Twin as DevnetTwin,
 };
 
 use super::mainnet::mainnet::runtime_types::pallet_tfgrid::types::EntityProof as MainnetEntityProof;
@@ -21,8 +21,8 @@ use super::mainnet::mainnet::runtime_types::tfchain_support::types::{
     FarmCertification as MainnetFarmCertification, NodeCertification as MainnetNodeCertification,
 };
 use super::mainnet::{
-    Farm as MainnetFarm, Node as MainnetNode, SystemAccountInfo as MainnetSystemAccountInfo,
-    Twin as MainnetTwin,
+    Contract as MainnetContract, Farm as MainnetFarm, Node as MainnetNode,
+    SystemAccountInfo as MainnetSystemAccountInfo, Twin as MainnetTwin,
 };
 
 use super::testnet::testnet::runtime_types::pallet_tfgrid::types::EntityProof as TestnetEntityProof;
@@ -30,8 +30,8 @@ use super::testnet::testnet::runtime_types::tfchain_support::types::{
     FarmCertification as TestnetFarmCertification, NodeCertification as TestnetNodeCertification,
 };
 use super::testnet::{
-    Farm as TestnetFarm, Node as TestnetNode, SystemAccountInfo as TestnetSystemAccountInfo,
-    Twin as TestnetTwin,
+    Contract as TestnetContract, Farm as TestnetFarm, Node as TestnetNode,
+    SystemAccountInfo as TestnetSystemAccountInfo, Twin as TestnetTwin,
 };
 
 pub type Hash = <PolkadotConfig as Config>::Hash;
@@ -234,12 +234,12 @@ impl From<DevnetContract> for Contract {
             twin_id: contract.twin_id,
             state: ContractState::Created,
             solution_provider_id: contract.solution_provider_id,
-            contract_type: ContractData::default() 
+            contract_type: ContractData::default(),
         };
-        
+
         match contract.contract_type {
             super::devnet::devnet::runtime_types::pallet_smart_contract::types::ContractData::NodeContract(nc) => {
-                
+
                 ctr.contract_type = ContractData::NodeContract(NodeContract{
                     node_id: nc.node_id,
                     deployment_data: parse_vec_u8!(nc.deployment_data),
@@ -258,7 +258,7 @@ impl From<DevnetContract> for Contract {
                 ctr.contract_type = ContractData::RentContract(RentContract { node_id: rc.node_id })
             }
         }
-        
+
         match contract.state {
             super::devnet::devnet::runtime_types::pallet_smart_contract::types::ContractState::Created => {
                 ctr.state = ContractState::Created
@@ -268,7 +268,101 @@ impl From<DevnetContract> for Contract {
             },
             _ => ()
         };
-        
+
+        ctr
+    }
+}
+
+impl From<TestnetContract> for Contract {
+    fn from(contract: TestnetContract) -> Self {
+        let mut ctr = Contract {
+            version: contract.version,
+            contract_id: contract.contract_id,
+            twin_id: contract.twin_id,
+            state: ContractState::Created,
+            solution_provider_id: contract.solution_provider_id,
+            contract_type: ContractData::default(),
+        };
+
+        match contract.contract_type {
+            super::testnet::testnet::runtime_types::pallet_smart_contract::types::ContractData::NodeContract(nc) => {
+
+                ctr.contract_type = ContractData::NodeContract(NodeContract{
+                    node_id: nc.node_id,
+                    deployment_data: parse_vec_u8!(nc.deployment_data),
+                    deployment_hash: nc.deployment_hash.into(),
+                    public_ips: nc.public_ips,
+                    public_ips_list: nc.public_ips_list.iter().map(|ip| IP {
+                        ip: parse_vec_u8!(ip.ip.0.clone()),
+                        gw: parse_vec_u8!(ip.gateway.0.clone())
+                    }).collect()
+                });
+            },
+            super::testnet::testnet::runtime_types::pallet_smart_contract::types::ContractData::NameContract(nmc) => {
+                ctr.contract_type = ContractData::NameContract(NameContract{ name: parse_vec_u8!(nmc.name.0) })
+            },
+            super::testnet::testnet::runtime_types::pallet_smart_contract::types::ContractData::RentContract(rc) => {
+                ctr.contract_type = ContractData::RentContract(RentContract { node_id: rc.node_id })
+            }
+        }
+
+        match contract.state {
+            super::testnet::testnet::runtime_types::pallet_smart_contract::types::ContractState::Created => {
+                ctr.state = ContractState::Created
+            },
+            super::testnet::testnet::runtime_types::pallet_smart_contract::types::ContractState::GracePeriod(block) => {
+                ctr.state = ContractState::GracePeriod(block as u32)
+            },
+            _ => ()
+        };
+
+        ctr
+    }
+}
+
+impl From<MainnetContract> for Contract {
+    fn from(contract: MainnetContract) -> Self {
+        let mut ctr = Contract {
+            version: contract.version,
+            contract_id: contract.contract_id,
+            twin_id: contract.twin_id,
+            state: ContractState::Created,
+            solution_provider_id: contract.solution_provider_id,
+            contract_type: ContractData::default(),
+        };
+
+        match contract.contract_type {
+            super::mainnet::mainnet::runtime_types::pallet_smart_contract::types::ContractData::NodeContract(nc) => {
+
+                ctr.contract_type = ContractData::NodeContract(NodeContract{
+                    node_id: nc.node_id,
+                    deployment_data: parse_vec_u8!(nc.deployment_data),
+                    deployment_hash: nc.deployment_hash.into(),
+                    public_ips: nc.public_ips,
+                    public_ips_list: nc.public_ips_list.iter().map(|ip| IP {
+                        ip: parse_vec_u8!(ip.ip.0.clone()),
+                        gw: parse_vec_u8!(ip.gateway.0.clone())
+                    }).collect()
+                });
+            },
+            super::mainnet::mainnet::runtime_types::pallet_smart_contract::types::ContractData::NameContract(nmc) => {
+                ctr.contract_type = ContractData::NameContract(NameContract{ name: parse_vec_u8!(nmc.name.0) })
+            },
+            super::mainnet::mainnet::runtime_types::pallet_smart_contract::types::ContractData::RentContract(rc) => {
+                ctr.contract_type = ContractData::RentContract(RentContract { node_id: rc.node_id })
+            }
+        }
+
+        match contract.state {
+            super::mainnet::mainnet::runtime_types::pallet_smart_contract::types::ContractState::Created => {
+                ctr.state = ContractState::Created
+            },
+            super::mainnet::mainnet::runtime_types::pallet_smart_contract::types::ContractState::GracePeriod(block) => {
+                ctr.state = ContractState::GracePeriod(block as u32)
+            },
+            _ => ()
+        };
+
         ctr
     }
 }

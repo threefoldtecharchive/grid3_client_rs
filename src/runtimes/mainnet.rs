@@ -19,7 +19,7 @@ pub use mainnet::runtime_types::tfchain_support::types::{
     Farm as FarmData, Interface, Node as NodeData, PublicConfig, PublicIP as PublicIpData, IP,
 };
 use sp_core::{crypto::AccountId32, H256};
-use subxt::{tx::PairSigner, Error};
+use subxt::Error;
 
 pub type Twin = TwinData<TwinIp, sp_core::crypto::AccountId32>;
 
@@ -32,7 +32,7 @@ pub type PublicConfigOf = PublicConfig<IPv4, Option<IPv6>, Option<Domain>>;
 pub type InterfaceOf = Interface<InterfaceName, InterfaceMac, Vec<InterfaceIp>>;
 pub type Node = NodeData<PublicConfigOf, InterfaceOf>;
 
-use crate::client::TfchainClient;
+use crate::client::Client;
 
 pub use mainnet::tft_bridge_module::events::BurnTransactionReady;
 pub use mainnet::tft_bridge_module::events::BurnTransactionSignatureAdded;
@@ -40,19 +40,19 @@ pub use mainnet::tft_bridge_module::events::MintTransactionProposed;
 
 pub type SystemAccountInfo = AccountInfo<u32, AccountData<u128>>;
 
-pub async fn create_twin(cl: &TfchainClient, ip: String) -> Result<H256, Error> {
+pub async fn create_twin(cl: &Client, ip: String) -> Result<H256, Error> {
     let create_twin_tx = mainnet::tx()
         .tfgrid_module()
         .create_twin(ip.as_bytes().to_vec());
-    let signer = PairSigner::new(cl.pair.clone());
+    let signer = cl.pair.signer();
     cl.api
         .tx()
-        .sign_and_submit_default(&create_twin_tx, &signer)
+        .sign_and_submit_default(&create_twin_tx, signer.as_ref())
         .await
 }
 
 pub async fn sign_terms_and_conditions(
-    cl: &TfchainClient,
+    cl: &Client,
     document_link: String,
     document_hash: String,
 ) -> Result<H256, Error> {
@@ -60,15 +60,15 @@ pub async fn sign_terms_and_conditions(
         document_link.as_bytes().to_vec(),
         document_hash.as_bytes().to_vec(),
     );
-    let signer = PairSigner::new(cl.pair.clone());
+    let signer = cl.pair.signer();
     cl.api
         .tx()
-        .sign_and_submit_default(&create_twin_tx, &signer)
+        .sign_and_submit_default(&create_twin_tx, signer.as_ref())
         .await
 }
 
 pub async fn get_twin_by_id(
-    cl: &TfchainClient,
+    cl: &Client,
     id: u32,
     at_block: Option<types::Hash>,
 ) -> Result<Option<types::Twin>, Error> {
@@ -80,22 +80,29 @@ pub async fn get_twin_by_id(
         .map(types::Twin::from))
 }
 
-pub async fn get_contract_by_id(cl: &TfchainClient, id: u64) -> Result<Option<Contract>, Error> {
-    cl.api
+pub async fn get_contract_by_id(
+    cl: &Client,
+    id: u64,
+    at_block: Option<types::Hash>,
+) -> Result<Option<types::Contract>, Error> {
+    Ok(cl
+        .api
         .storage()
         .fetch(
             &mainnet::storage().smart_contract_module().contracts(id),
-            None,
+            at_block,
         )
-        .await
+        .await?
+        .map(types::Contract::from))
 }
 
 pub async fn get_node_by_id(
-    cl: &TfchainClient,
+    cl: &Client,
     id: u32,
     at_block: Option<types::Hash>,
 ) -> Result<Option<types::TfgridNode>, Error> {
-    Ok(cl.api
+    Ok(cl
+        .api
         .storage()
         .fetch(&mainnet::storage().tfgrid_module().nodes(id), at_block)
         .await?
@@ -103,7 +110,7 @@ pub async fn get_node_by_id(
 }
 
 pub async fn get_farm_by_id(
-    cl: &TfchainClient,
+    cl: &Client,
     id: u32,
     at_block: Option<types::Hash>,
 ) -> Result<Option<types::TfgridFarm>, Error> {
@@ -116,14 +123,14 @@ pub async fn get_farm_by_id(
 }
 
 pub async fn get_block_hash(
-    cl: &TfchainClient,
+    cl: &Client,
     block_number: Option<types::BlockNumber>,
 ) -> Result<Option<types::Hash>, Error> {
     cl.api.rpc().block_hash(block_number).await
 }
 
 pub async fn get_balance(
-    cl: &TfchainClient,
+    cl: &Client,
     account: &AccountId32,
     at_block: Option<types::Hash>,
 ) -> Result<Option<types::SystemAccountInfo>, Error> {
