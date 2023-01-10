@@ -124,6 +124,16 @@ pub struct Client {
     pub api: OnlineClient<PolkadotConfig>,
 }
 
+macro_rules! call {
+    ($self:ident, $name:ident, $($arg:expr),+) => (
+        match $self.runtime {
+            Runtime::Devnet => devnet::$name($self, $($arg),+).await,
+            Runtime::Testnet => testnet::$name($self, $($arg),+).await,
+            Runtime::Mainnet => mainnet::$name($self, $($arg),+).await,
+        }
+    )
+}
+
 impl Client {
     pub async fn new(url: String, pair: Pair, runtime: Runtime) -> Result<Client, Error> {
         let api = OnlineClient::<PolkadotConfig>::from_url(url).await?;
@@ -136,11 +146,7 @@ impl Client {
         id: u32,
         at_block: Option<Hash>,
     ) -> Result<Option<Twin>, Error> {
-        match self.runtime {
-            Runtime::Devnet => devnet::get_twin_by_id(self, id, at_block).await,
-            Runtime::Testnet => testnet::get_twin_by_id(self, id, at_block).await,
-            Runtime::Mainnet => mainnet::get_twin_by_id(self, id, at_block).await,
-        }
+        call!(self, get_twin_by_id, id, at_block)
     }
 
     pub async fn get_farm_by_id(
@@ -148,11 +154,7 @@ impl Client {
         id: u32,
         at_block: Option<Hash>,
     ) -> Result<Option<TfgridFarm>, Error> {
-        match self.runtime {
-            Runtime::Devnet => devnet::get_farm_by_id(self, id, at_block).await,
-            Runtime::Testnet => testnet::get_farm_by_id(self, id, at_block).await,
-            Runtime::Mainnet => mainnet::get_farm_by_id(self, id, at_block).await,
-        }
+        call!(self, get_farm_by_id, id, at_block)
     }
 
     pub async fn get_node_by_id(
@@ -160,11 +162,7 @@ impl Client {
         id: u32,
         at_block: Option<Hash>,
     ) -> Result<Option<TfgridNode>, Error> {
-        match self.runtime {
-            Runtime::Devnet => devnet::get_node_by_id(self, id, at_block).await,
-            Runtime::Testnet => testnet::get_node_by_id(self, id, at_block).await,
-            Runtime::Mainnet => mainnet::get_node_by_id(self, id, at_block).await,
-        }
+        call!(self, get_node_by_id, id, at_block)
     }
 
     pub async fn get_balance(
@@ -172,22 +170,14 @@ impl Client {
         account: &AccountId32,
         at_block: Option<Hash>,
     ) -> Result<Option<SystemAccountInfo>, Error> {
-        match self.runtime {
-            Runtime::Devnet => devnet::get_balance(self, account, at_block).await,
-            Runtime::Testnet => testnet::get_balance(self, account, at_block).await,
-            Runtime::Mainnet => mainnet::get_balance(self, account, at_block).await,
-        }
+        call!(self, get_balance, account, at_block)
     }
 
     pub async fn get_block_hash(
         &self,
         block_number: Option<BlockNumber>,
     ) -> Result<Option<Hash>, Error> {
-        match self.runtime {
-            Runtime::Devnet => devnet::get_block_hash(self, block_number).await,
-            Runtime::Testnet => testnet::get_block_hash(self, block_number).await,
-            Runtime::Mainnet => mainnet::get_block_hash(self, block_number).await,
-        }
+        call!(self, get_block_hash, block_number)
     }
 
     pub async fn get_contract_by_id(
@@ -195,10 +185,6 @@ impl Client {
         id: u64,
         at_block: Option<Hash>,
     ) -> Result<Option<Contract>, Error> {
-        match self.runtime {
-            Runtime::Devnet => devnet::get_contract_by_id(self, id, at_block).await,
-            Runtime::Testnet => devnet::get_contract_by_id(self, id, at_block).await,
-            Runtime::Mainnet => devnet::get_contract_by_id(self, id, at_block).await,
-        }
+        call!(self, get_contract_by_id, id, at_block)
     }
 }

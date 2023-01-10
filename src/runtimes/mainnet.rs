@@ -80,14 +80,20 @@ pub async fn get_twin_by_id(
         .map(types::Twin::from))
 }
 
-pub async fn get_contract_by_id(cl: &Client, id: u64) -> Result<Option<Contract>, Error> {
-    cl.api
+pub async fn get_contract_by_id(
+    cl: &Client,
+    id: u64,
+    at_block: Option<types::Hash>,
+) -> Result<Option<types::Contract>, Error> {
+    Ok(cl
+        .api
         .storage()
         .fetch(
             &mainnet::storage().smart_contract_module().contracts(id),
-            None,
+            at_block,
         )
-        .await
+        .await?
+        .map(types::Contract::from))
 }
 
 pub async fn get_node_by_id(
