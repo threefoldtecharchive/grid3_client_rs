@@ -141,6 +141,35 @@ impl Client {
         Ok(Client { pair, api, runtime })
     }
 
+    pub async fn create_twin(
+        &self,
+        relay: Option<String>,
+        pk: Option<String>,
+    ) -> Result<Hash, Error> {
+        call!(self, create_twin, relay, pk)
+    }
+
+    pub async fn update_twin(
+        &self,
+        relay: Option<String>,
+        pk: Option<String>,
+    ) -> Result<Hash, Error> {
+        call!(self, update_twin, relay, pk)
+    }
+
+    pub async fn sign_terms_and_conditions(
+        &self,
+        document_link: String,
+        document_hash: String,
+    ) -> Result<Hash, Error> {
+        call!(
+            self,
+            sign_terms_and_conditions,
+            document_link,
+            document_hash
+        )
+    }
+
     pub async fn get_twin_by_id(
         &self,
         id: u32,

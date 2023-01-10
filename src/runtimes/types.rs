@@ -840,8 +840,16 @@ pub struct EntityProof {
 
 impl From<DevnetTwin> for Twin {
     fn from(twin: DevnetTwin) -> Self {
-        let relay = parse_vec_u8!(twin.relay.0);
-        let pk = parse_vec_u8!(twin.pk.0);
+        let relay = match twin.relay {
+            Some(r) => parse_vec_u8!(r.0),
+            None => String::from(""),
+        };
+
+        let pk = match twin.pk {
+            Some(r) => parse_vec_u8!(r.0),
+            None => String::from(""),
+        };
+
         let entities = twin.entities.into_iter().map(|e| e.into()).collect();
 
         Twin {

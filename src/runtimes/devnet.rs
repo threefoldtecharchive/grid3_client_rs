@@ -44,22 +44,32 @@ pub async fn create_twin(
     relay: Option<String>,
     pk: Option<String>,
 ) -> Result<H256, Error> {
-    let r = match relay {
-        Some(rel) => BoundedVec(rel.as_bytes().to_vec()),
-        None => BoundedVec(Vec::new()),
-    };
-
-    let p = match pk {
-        Some(pubk) => BoundedVec(pubk.as_bytes().to_vec()),
-        None => BoundedVec(Vec::new()),
-    };
-
-    let create_twin_tx = devnet::tx().tfgrid_module().create_twin(r, p);
+    let create_twin_tx = devnet::tx().tfgrid_module().create_twin(
+        relay.map(|r| BoundedVec(r.as_bytes().to_vec())),
+        pk.map(|r| BoundedVec(r.as_bytes().to_vec())),
+    );
     let signer = cl.pair.signer();
 
     cl.api
         .tx()
         .sign_and_submit_default(&create_twin_tx, signer.as_ref())
+        .await
+}
+
+pub async fn update_twin(
+    cl: &Client,
+    relay: Option<String>,
+    pk: Option<String>,
+) -> Result<H256, Error> {
+    let update_twin_tx = devnet::tx().tfgrid_module().update_twin(
+        relay.map(|r| BoundedVec(r.as_bytes().to_vec())),
+        pk.map(|r| BoundedVec(r.as_bytes().to_vec())),
+    );
+    let signer = cl.pair.signer();
+
+    cl.api
+        .tx()
+        .sign_and_submit_default(&update_twin_tx, signer.as_ref())
         .await
 }
 

@@ -41,14 +41,33 @@ pub use mainnet::tft_bridge_module::events::MintTransactionProposed;
 
 pub type SystemAccountInfo = AccountInfo<u32, AccountData<u128>>;
 
-pub async fn create_twin(cl: &Client, ip: String) -> Result<H256, Error> {
+pub async fn create_twin(
+    cl: &Client,
+    ip: Option<String>,
+    _pk: Option<String>,
+) -> Result<H256, Error> {
     let create_twin_tx = mainnet::tx()
         .tfgrid_module()
-        .create_twin(ip.as_bytes().to_vec());
+        .create_twin(ip.unwrap().as_bytes().to_vec());
     let signer = cl.pair.signer();
     cl.api
         .tx()
         .sign_and_submit_default(&create_twin_tx, signer.as_ref())
+        .await
+}
+
+pub async fn update_twin(
+    cl: &Client,
+    ip: Option<String>,
+    _pk: Option<String>,
+) -> Result<H256, Error> {
+    let update_twin_tx = mainnet::tx()
+        .tfgrid_module()
+        .update_twin(ip.unwrap().as_bytes().to_vec());
+    let signer = cl.pair.signer();
+    cl.api
+        .tx()
+        .sign_and_submit_default(&update_twin_tx, signer.as_ref())
         .await
 }
 
