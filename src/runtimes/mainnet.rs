@@ -46,15 +46,29 @@ pub async fn create_twin(
     kp: &KeyPair,
     ip: Option<String>,
     _pk: Option<String>,
-) -> Result<H256, Error> {
+) -> Result<u32, Error> {
     let create_twin_tx = mainnet::tx()
         .tfgrid_module()
         .create_twin(ip.unwrap().as_bytes().to_vec());
+
     let signer = kp.signer();
-    cl.api
+
+    let create_twin = cl
+        .api
         .tx()
-        .sign_and_submit_default(&create_twin_tx, signer.as_ref())
-        .await
+        .sign_and_submit_then_watch_default(&create_twin_tx, signer.as_ref())
+        .await?
+        .wait_for_finalized_success()
+        .await?;
+
+    let twin_create_event =
+        create_twin.find_first::<mainnet::tfgrid_module::events::TwinStored>()?;
+
+    if let Some(event) = twin_create_event {
+        Ok(event.0.id)
+    } else {
+        Err(Error::Other(String::from("failed to create twin")))
+    }
 }
 
 pub async fn update_twin(
@@ -66,11 +80,25 @@ pub async fn update_twin(
     let update_twin_tx = mainnet::tx()
         .tfgrid_module()
         .update_twin(ip.unwrap().as_bytes().to_vec());
+
     let signer = kp.signer();
-    cl.api
+
+    let update_twin = cl
+        .api
         .tx()
-        .sign_and_submit_default(&update_twin_tx, signer.as_ref())
-        .await
+        .sign_and_submit_then_watch_default(&update_twin_tx, signer.as_ref())
+        .await?
+        .wait_for_finalized_success()
+        .await?;
+
+    let twin_create_event =
+        update_twin.find_first::<mainnet::tfgrid_module::events::TwinUpdated>()?;
+
+    if let Some(_) = twin_create_event {
+        Ok(update_twin.block_hash())
+    } else {
+        Err(Error::Other(String::from("failed to create twin")))
+    }
 }
 
 pub async fn sign_terms_and_conditions(
@@ -79,15 +107,22 @@ pub async fn sign_terms_and_conditions(
     document_link: String,
     document_hash: String,
 ) -> Result<H256, Error> {
-    let create_twin_tx = mainnet::tx().tfgrid_module().user_accept_tc(
+    let sign_tandc_tx = mainnet::tx().tfgrid_module().user_accept_tc(
         document_link.as_bytes().to_vec(),
         document_hash.as_bytes().to_vec(),
     );
+
     let signer = kp.signer();
-    cl.api
+
+    let sign_tandc = cl
+        .api
         .tx()
-        .sign_and_submit_default(&create_twin_tx, signer.as_ref())
-        .await
+        .sign_and_submit_then_watch_default(&sign_tandc_tx, signer.as_ref())
+        .await?
+        .wait_for_finalized_success()
+        .await?;
+
+    Ok(sign_tandc.block_hash())
 }
 
 pub async fn get_twin_by_id(

@@ -122,15 +122,17 @@ impl Client {
         Ok(Client { api, runtime })
     }
 
+    // Creates a twin and checks for success, twin ID is returned on success
     pub async fn create_twin(
         &self,
         kp: &KeyPair,
         relay: Option<String>,
         pk: Option<String>,
-    ) -> Result<Hash, Error> {
+    ) -> Result<u32, Error> {
         call!(self, create_twin, kp, relay, pk)
     }
 
+    // Updates a twin and checks for success, blockhash is returned on success
     pub async fn update_twin(
         &self,
         kp: &KeyPair,
@@ -140,6 +142,7 @@ impl Client {
         call!(self, update_twin, kp, relay, pk)
     }
 
+    // Signs terms and condition and checks for success, blockhash is returned on success
     pub async fn sign_terms_and_conditions(
         &self,
         kp: &KeyPair,
