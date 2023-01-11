@@ -46,7 +46,7 @@ pub type BlockNumber = subxt::rpc::BlockNumber;
 #[macro_export]
 macro_rules! parse_vec_u8 {
     ($input:expr) => {
-        String::from_utf8($input).expect("Found invalid UTF-8")
+        String::from_utf8($input).expect("invalid utf8")
     };
 }
 
@@ -1040,9 +1040,9 @@ impl From<LocalSystemAccountInfo> for SystemAccountInfo {
 pub struct Twin {
     id: u32,
     account_id: AccountId32,
-    relay: String,
+    relay: Option<String>,
     entities: Vec<EntityProof>,
-    pk: String,
+    pk: Option<Vec<u8>>,
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
@@ -1053,39 +1053,28 @@ pub struct EntityProof {
 
 impl From<LocalTwin> for Twin {
     fn from(twin: LocalTwin) -> Self {
-        let relay = match twin.relay {
-            Some(r) => parse_vec_u8!(r.0),
-            None => String::from(""),
-        };
-
-        let pk = match twin.pk {
-            Some(r) => parse_vec_u8!(r.0),
-            None => String::from(""),
-        };
-
         let entities = twin.entities.into_iter().map(|e| e.into()).collect();
 
         Twin {
             id: twin.id,
             account_id: twin.account_id,
-            relay,
+            relay: twin.relay.map(|v| parse_vec_u8!(v.0)),
             entities,
-            pk,
+            pk: twin.pk.map(|v| v.0),
         }
     }
 }
 
 impl From<DevnetTwin> for Twin {
     fn from(twin: DevnetTwin) -> Self {
-        let ip = parse_vec_u8!(twin.ip.0 .0);
         let entities = twin.entities.into_iter().map(|e| e.into()).collect();
 
         Twin {
             id: twin.id,
             account_id: twin.account_id,
-            relay: ip,
+            relay: Some(parse_vec_u8!(twin.ip.0 .0)),
             entities,
-            pk: String::from(""),
+            pk: None,
         }
     }
 }
@@ -1112,15 +1101,14 @@ impl From<DevnetEntityProof> for EntityProof {
 
 impl From<TestnetTwin> for Twin {
     fn from(twin: TestnetTwin) -> Self {
-        let ip = parse_vec_u8!(twin.ip.0);
         let entities = twin.entities.into_iter().map(|e| e.into()).collect();
 
         Twin {
             id: twin.id,
             account_id: twin.account_id,
-            relay: ip,
+            relay: Some(parse_vec_u8!(twin.ip.0)),
             entities,
-            pk: String::from(""),
+            pk: None,
         }
     }
 }
@@ -1137,15 +1125,14 @@ impl From<TestnetEntityProof> for EntityProof {
 
 impl From<MainnetTwin> for Twin {
     fn from(twin: MainnetTwin) -> Self {
-        let ip = parse_vec_u8!(twin.ip.0);
         let entities = twin.entities.into_iter().map(|e| e.into()).collect();
 
         Twin {
             id: twin.id,
             account_id: twin.account_id,
-            relay: ip,
+            relay: Some(parse_vec_u8!(twin.ip.0)),
             entities,
-            pk: String::from(""),
+            pk: None,
         }
     }
 }

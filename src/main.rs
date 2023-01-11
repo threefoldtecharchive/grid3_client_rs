@@ -76,8 +76,6 @@
 
 pub mod client;
 pub mod runtimes;
-use client::BlockNumber;
-use subxt::ext::sp_core::crypto::AccountId32;
 
 use client::{KeyPair, KeyType, Runtime};
 

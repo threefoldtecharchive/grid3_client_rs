@@ -49,6 +49,7 @@ impl FromStr for KeyType {
     }
 }
 
+#[derive(Clone)]
 pub enum KeyPair {
     Sr25519(sr25519::Pair),
     Ed25519(ed25519::Pair),
@@ -120,6 +121,7 @@ impl From<ed25519::Pair> for KeyPair {
     }
 }
 
+#[derive(Clone)]
 pub struct Client {
     pub runtime: Runtime,
     pub pair: KeyPair,
@@ -138,7 +140,11 @@ macro_rules! call {
 }
 
 impl Client {
-    pub async fn new(url: String, pair: KeyPair, runtime: Runtime) -> Result<Client, Error> {
+    pub async fn new<U: AsRef<str>>(
+        url: U,
+        pair: KeyPair,
+        runtime: Runtime,
+    ) -> Result<Client, Error> {
         let api = OnlineClient::<PolkadotConfig>::from_url(url).await?;
 
         Ok(Client { pair, api, runtime })
