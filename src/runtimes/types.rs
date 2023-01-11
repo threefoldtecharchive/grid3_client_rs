@@ -1036,16 +1036,16 @@ impl From<LocalSystemAccountInfo> for SystemAccountInfo {
     }
 }
 
-#[derive(Deserialize, Serialize, Debug, Clone)]
+#[derive(Deserialize, Serialize, Debug, Clone, Eq, PartialEq)]
 pub struct Twin {
-    id: u32,
-    account_id: AccountId32,
-    relay: Option<String>,
-    entities: Vec<EntityProof>,
-    pk: Option<Vec<u8>>,
+    pub id: u32,
+    pub account: AccountId32,
+    pub relay: Option<String>,
+    pub entities: Vec<EntityProof>,
+    pub pk: Option<Vec<u8>>,
 }
 
-#[derive(Deserialize, Serialize, Debug, Clone)]
+#[derive(Deserialize, Serialize, Debug, Clone, Eq, PartialEq)]
 pub struct EntityProof {
     entity_id: u32,
     signature: String,
@@ -1057,7 +1057,7 @@ impl From<LocalTwin> for Twin {
 
         Twin {
             id: twin.id,
-            account_id: twin.account_id,
+            account: twin.account_id,
             relay: twin.relay.map(|v| parse_vec_u8!(v.0)),
             entities,
             pk: twin.pk.map(|v| v.0),
@@ -1071,7 +1071,7 @@ impl From<DevnetTwin> for Twin {
 
         Twin {
             id: twin.id,
-            account_id: twin.account_id,
+            account: twin.account_id,
             relay: Some(parse_vec_u8!(twin.ip.0 .0)),
             entities,
             pk: None,
@@ -1105,7 +1105,7 @@ impl From<TestnetTwin> for Twin {
 
         Twin {
             id: twin.id,
-            account_id: twin.account_id,
+            account: twin.account_id,
             relay: Some(parse_vec_u8!(twin.ip.0)),
             entities,
             pk: None,
@@ -1129,7 +1129,7 @@ impl From<MainnetTwin> for Twin {
 
         Twin {
             id: twin.id,
-            account_id: twin.account_id,
+            account: twin.account_id,
             relay: Some(parse_vec_u8!(twin.ip.0)),
             entities,
             pk: None,

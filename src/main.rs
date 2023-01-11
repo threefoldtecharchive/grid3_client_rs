@@ -86,11 +86,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .expect("failed to get key from phrase");
 
     let seed = "0x9917ea107aca8e9c29f4530413b41333ada03cf39fede45cde611b943e2e8dd1";
-    let _ = KeyPair::from_seed(KeyType::Sr25519, seed, None);
+    let _ = KeyPair::from_phrase(KeyType::Sr25519, seed, None);
 
     let cl = client::Client::new(
         String::from("wss://tfchain.dev.grid.tf:443"),
-        p,
         Runtime::Devnet,
     )
     .await?;

@@ -28,7 +28,7 @@ pub type Farm = FarmData<FarmName>;
 pub type InterfaceOf = Interface<InterfaceName, InterfaceMac, BoundedVec<InterfaceIp>>;
 pub type Node = NodeData<Location, InterfaceOf, SerialNumber>;
 
-use crate::client::Client;
+use crate::client::{Client, KeyPair};
 
 pub use devnet::tft_bridge_module::events::BurnTransactionReady;
 pub use devnet::tft_bridge_module::events::BurnTransactionSignatureAdded;
@@ -38,13 +38,14 @@ pub type SystemAccountInfo = AccountInfo<u32, AccountData<u128>>;
 
 pub async fn create_twin(
     cl: &Client,
+    kp: &KeyPair,
     ip: Option<String>,
     _pk: Option<String>,
 ) -> Result<H256, Error> {
     let create_twin_tx = devnet::tx()
         .tfgrid_module()
         .create_twin(BoundedVec(ip.unwrap().as_bytes().to_vec()));
-    let signer = cl.pair.signer();
+    let signer = kp.signer();
     cl.api
         .tx()
         .sign_and_submit_default(&create_twin_tx, signer.as_ref())
@@ -53,13 +54,14 @@ pub async fn create_twin(
 
 pub async fn update_twin(
     cl: &Client,
+    kp: &KeyPair,
     ip: Option<String>,
     _pk: Option<String>,
 ) -> Result<H256, Error> {
     let update_twin_tx = devnet::tx()
         .tfgrid_module()
         .update_twin(BoundedVec(ip.unwrap().as_bytes().to_vec()));
-    let signer = cl.pair.signer();
+    let signer = kp.signer();
     cl.api
         .tx()
         .sign_and_submit_default(&update_twin_tx, signer.as_ref())
@@ -68,6 +70,7 @@ pub async fn update_twin(
 
 pub async fn sign_terms_and_conditions(
     cl: &Client,
+    kp: &KeyPair,
     document_link: String,
     document_hash: String,
 ) -> Result<H256, Error> {
@@ -75,7 +78,7 @@ pub async fn sign_terms_and_conditions(
         BoundedVec(document_link.as_bytes().to_vec()),
         BoundedVec(document_hash.as_bytes().to_vec()),
     );
-    let signer = cl.pair.signer();
+    let signer = kp.signer();
     cl.api
         .tx()
         .sign_and_submit_default(&create_twin_tx, signer.as_ref())

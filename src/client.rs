@@ -56,30 +56,7 @@ pub enum KeyPair {
 }
 
 impl KeyPair {
-    pub fn from_seed<S: AsRef<str>>(
-        k: KeyType,
-        seed: S,
-        password: Option<&str>,
-    ) -> Result<Self, SecretStringError> {
-        let seed = seed
-            .as_ref()
-            .strip_prefix("0x")
-            .unwrap_or_else(|| seed.as_ref());
-
-        let pair = match k {
-            KeyType::Sr25519 => {
-                let (pair, _): (sr25519::Pair, _) = Pair::from_string_with_seed(seed, password)?;
-                Self::Sr25519(pair)
-            }
-            KeyType::Ed25519 => {
-                let (pair, _): (ed25519::Pair, _) = Pair::from_string_with_seed(seed, password)?;
-                Self::Ed25519(pair)
-            }
-        };
-
-        Ok(pair)
-    }
-
+    // create a key pair from a seed prefixed with `0x`. or a BIP-39 phrase
     pub fn from_phrase<S: AsRef<str>>(
         k: KeyType,
         phrase: S,
@@ -89,11 +66,11 @@ impl KeyPair {
 
         let pair = match k {
             KeyType::Sr25519 => {
-                let (pair, _): (sr25519::Pair, _) = Pair::from_phrase(phrase, password)?;
+                let pair: sr25519::Pair = Pair::from_string(phrase, password)?;
                 Self::Sr25519(pair)
             }
             KeyType::Ed25519 => {
-                let (pair, _): (ed25519::Pair, _) = Pair::from_phrase(phrase, password)?;
+                let pair: ed25519::Pair = Pair::from_string(phrase, password)?;
                 Self::Ed25519(pair)
             }
         };
@@ -124,7 +101,6 @@ impl From<ed25519::Pair> for KeyPair {
 #[derive(Clone)]
 pub struct Client {
     pub runtime: Runtime,
-    pub pair: KeyPair,
     pub api: OnlineClient<PolkadotConfig>,
 }
 
@@ -140,40 +116,40 @@ macro_rules! call {
 }
 
 impl Client {
-    pub async fn new<U: AsRef<str>>(
-        url: U,
-        pair: KeyPair,
-        runtime: Runtime,
-    ) -> Result<Client, Error> {
+    pub async fn new<U: AsRef<str>>(url: U, runtime: Runtime) -> Result<Client, Error> {
         let api = OnlineClient::<PolkadotConfig>::from_url(url).await?;
 
-        Ok(Client { pair, api, runtime })
+        Ok(Client { api, runtime })
     }
 
     pub async fn create_twin(
         &self,
+        kp: &KeyPair,
         relay: Option<String>,
         pk: Option<String>,
     ) -> Result<Hash, Error> {
-        call!(self, create_twin, relay, pk)
+        call!(self, create_twin, kp, relay, pk)
     }
 
     pub async fn update_twin(
         &self,
+        kp: &KeyPair,
         relay: Option<String>,
         pk: Option<String>,
     ) -> Result<Hash, Error> {
-        call!(self, update_twin, relay, pk)
+        call!(self, update_twin, kp, relay, pk)
     }
 
     pub async fn sign_terms_and_conditions(
         &self,
+        kp: &KeyPair,
         document_link: String,
         document_hash: String,
     ) -> Result<Hash, Error> {
         call!(
             self,
             sign_terms_and_conditions,
+            kp,
             document_link,
             document_hash
         )

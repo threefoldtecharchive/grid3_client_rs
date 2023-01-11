@@ -33,7 +33,7 @@ pub type Node = NodeData<Location, InterfaceOf, SerialNumber>;
 
 pub type SystemAccountInfo = AccountInfo<u32, AccountData<u128>>;
 
-use crate::client::Client;
+use crate::client::{Client, KeyPair};
 
 pub use local::tft_bridge_module::events::BurnTransactionReady;
 pub use local::tft_bridge_module::events::BurnTransactionSignatureAdded;
@@ -41,6 +41,7 @@ pub use local::tft_bridge_module::events::MintTransactionProposed;
 
 pub async fn create_twin(
     cl: &Client,
+    kp: &KeyPair,
     relay: Option<String>,
     pk: Option<String>,
 ) -> Result<H256, Error> {
@@ -48,7 +49,7 @@ pub async fn create_twin(
         relay.map(|r| BoundedVec(r.as_bytes().to_vec())),
         pk.map(|r| BoundedVec(r.as_bytes().to_vec())),
     );
-    let signer = cl.pair.signer();
+    let signer = kp.signer();
 
     cl.api
         .tx()
@@ -58,6 +59,7 @@ pub async fn create_twin(
 
 pub async fn update_twin(
     cl: &Client,
+    kp: &KeyPair,
     relay: Option<String>,
     pk: Option<String>,
 ) -> Result<H256, Error> {
@@ -65,7 +67,7 @@ pub async fn update_twin(
         relay.map(|r| BoundedVec(r.as_bytes().to_vec())),
         pk.map(|r| BoundedVec(r.as_bytes().to_vec())),
     );
-    let signer = cl.pair.signer();
+    let signer = kp.signer();
 
     cl.api
         .tx()
@@ -75,6 +77,7 @@ pub async fn update_twin(
 
 pub async fn sign_terms_and_conditions(
     cl: &Client,
+    kp: &KeyPair,
     document_link: String,
     document_hash: String,
 ) -> Result<H256, Error> {
@@ -82,7 +85,7 @@ pub async fn sign_terms_and_conditions(
         BoundedVec(document_link.as_bytes().to_vec()),
         BoundedVec(document_hash.as_bytes().to_vec()),
     );
-    let signer = cl.pair.signer();
+    let signer = kp.signer();
     cl.api
         .tx()
         .sign_and_submit_default(&create_twin_tx, signer.as_ref())
