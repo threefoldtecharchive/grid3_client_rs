@@ -1,4 +1,4 @@
-use crate::runtimes::{devnet, mainnet, testnet, types};
+use crate::runtimes::{devnet, local, mainnet, testnet, types};
 use std::str::FromStr;
 use subxt::{
     ext::{
@@ -12,6 +12,7 @@ pub use types::{BlockNumber, Contract, Hash, SystemAccountInfo, TfgridFarm, Tfgr
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Runtime {
+    Local,
     Devnet,
     Testnet,
     Mainnet,
@@ -22,6 +23,7 @@ impl FromStr for Runtime {
 
     fn from_str(v: &str) -> Result<Self, Self::Err> {
         match v {
+            "local" => Ok(Self::Local),
             "devnet" => Ok(Self::Devnet),
             "mainnet" => Ok(Self::Mainnet),
             "testnet" => Ok(Self::Testnet),
@@ -127,6 +129,7 @@ pub struct Client {
 macro_rules! call {
     ($self:ident, $name:ident, $($arg:expr),+) => (
         match $self.runtime {
+            Runtime::Local => local::$name($self, $($arg),+).await,
             Runtime::Devnet => devnet::$name($self, $($arg),+).await,
             Runtime::Testnet => testnet::$name($self, $($arg),+).await,
             Runtime::Mainnet => mainnet::$name($self, $($arg),+).await,

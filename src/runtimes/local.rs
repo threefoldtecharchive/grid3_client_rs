@@ -1,50 +1,55 @@
-#[subxt::subxt(runtime_metadata_path = "artifacts/devnet.scale")]
-pub mod devnet {
+#[subxt::subxt(runtime_metadata_path = "artifacts/local.scale")]
+pub mod local {
     #[subxt(substitute_type = "frame_support::storage::bounded_vec::BoundedVec")]
+    use ::sp_std::vec::Vec;
+    #[subxt(substitute_type = "bounded::bounded::BoundedVec")]
     use ::sp_std::vec::Vec;
 }
 use super::types;
-pub use devnet::runtime_types::frame_system::AccountInfo;
-pub use devnet::runtime_types::pallet_balances::AccountData;
-pub use devnet::runtime_types::pallet_smart_contract::types::Contract;
-pub use devnet::runtime_types::pallet_tfgrid::{
+pub use local::runtime_types::frame_system::AccountInfo;
+pub use local::runtime_types::pallet_balances::AccountData;
+pub use local::runtime_types::pallet_smart_contract::types::Contract;
+pub use local::runtime_types::pallet_tfgrid::{
     farm::FarmName,
     interface::{InterfaceIp, InterfaceMac, InterfaceName},
     node::{Location, SerialNumber},
-    twin::TwinIp,
     types::Twin as TwinData,
 };
-use devnet::runtime_types::sp_core::bounded::bounded_vec::BoundedVec;
-pub use devnet::runtime_types::tfchain_support::types::{
+pub use local::runtime_types::tfchain_support::types::{
     Farm as FarmData, Interface, Node as NodeData, PublicConfig, PublicIP as PublicIpData,
 };
 use subxt::ext::{sp_core::H256, sp_runtime::AccountId32};
+
 use subxt::Error;
 
-pub type Twin = TwinData<TwinIp, AccountId32>;
+use local::runtime_types::sp_core::bounded::bounded_vec::BoundedVec;
+
+pub type Twin = TwinData<AccountId32>;
 
 pub type Farm = FarmData<FarmName>;
 
 pub type InterfaceOf = Interface<InterfaceName, InterfaceMac, BoundedVec<InterfaceIp>>;
 pub type Node = NodeData<Location, InterfaceOf, SerialNumber>;
 
+pub type SystemAccountInfo = AccountInfo<u32, AccountData<u128>>;
+
 use crate::client::Client;
 
-pub use devnet::tft_bridge_module::events::BurnTransactionReady;
-pub use devnet::tft_bridge_module::events::BurnTransactionSignatureAdded;
-pub use devnet::tft_bridge_module::events::MintTransactionProposed;
-
-pub type SystemAccountInfo = AccountInfo<u32, AccountData<u128>>;
+pub use local::tft_bridge_module::events::BurnTransactionReady;
+pub use local::tft_bridge_module::events::BurnTransactionSignatureAdded;
+pub use local::tft_bridge_module::events::MintTransactionProposed;
 
 pub async fn create_twin(
     cl: &Client,
-    ip: Option<String>,
-    _pk: Option<String>,
+    relay: Option<String>,
+    pk: Option<String>,
 ) -> Result<H256, Error> {
-    let create_twin_tx = devnet::tx()
-        .tfgrid_module()
-        .create_twin(BoundedVec(ip.unwrap().as_bytes().to_vec()));
+    let create_twin_tx = local::tx().tfgrid_module().create_twin(
+        relay.map(|r| BoundedVec(r.as_bytes().to_vec())),
+        pk.map(|r| BoundedVec(r.as_bytes().to_vec())),
+    );
     let signer = cl.pair.signer();
+
     cl.api
         .tx()
         .sign_and_submit_default(&create_twin_tx, signer.as_ref())
@@ -53,13 +58,15 @@ pub async fn create_twin(
 
 pub async fn update_twin(
     cl: &Client,
-    ip: Option<String>,
-    _pk: Option<String>,
+    relay: Option<String>,
+    pk: Option<String>,
 ) -> Result<H256, Error> {
-    let update_twin_tx = devnet::tx()
-        .tfgrid_module()
-        .update_twin(BoundedVec(ip.unwrap().as_bytes().to_vec()));
+    let update_twin_tx = local::tx().tfgrid_module().update_twin(
+        relay.map(|r| BoundedVec(r.as_bytes().to_vec())),
+        pk.map(|r| BoundedVec(r.as_bytes().to_vec())),
+    );
     let signer = cl.pair.signer();
+
     cl.api
         .tx()
         .sign_and_submit_default(&update_twin_tx, signer.as_ref())
@@ -71,7 +78,7 @@ pub async fn sign_terms_and_conditions(
     document_link: String,
     document_hash: String,
 ) -> Result<H256, Error> {
-    let create_twin_tx = devnet::tx().tfgrid_module().user_accept_tc(
+    let create_twin_tx = local::tx().tfgrid_module().user_accept_tc(
         BoundedVec(document_link.as_bytes().to_vec()),
         BoundedVec(document_hash.as_bytes().to_vec()),
     );
@@ -90,7 +97,7 @@ pub async fn get_twin_by_id(
     Ok(cl
         .api
         .storage()
-        .fetch(&devnet::storage().tfgrid_module().twins(id), at_block)
+        .fetch(&local::storage().tfgrid_module().twins(id), at_block)
         .await?
         .map(types::Twin::from))
 }
@@ -103,7 +110,7 @@ pub async fn get_twin_id_by_account(
     cl.api
         .storage()
         .fetch(
-            &devnet::storage()
+            &local::storage()
                 .tfgrid_module()
                 .twin_id_by_account_id(account),
             at_block,
@@ -120,7 +127,7 @@ pub async fn get_contract_by_id(
         .api
         .storage()
         .fetch(
-            &devnet::storage().smart_contract_module().contracts(id),
+            &local::storage().smart_contract_module().contracts(id),
             at_block,
         )
         .await?
@@ -135,7 +142,7 @@ pub async fn get_node_by_id(
     Ok(cl
         .api
         .storage()
-        .fetch(&devnet::storage().tfgrid_module().nodes(id), at_block)
+        .fetch(&local::storage().tfgrid_module().nodes(id), at_block)
         .await?
         .map(types::TfgridNode::from))
 }
@@ -148,7 +155,7 @@ pub async fn get_farm_by_id(
     Ok(cl
         .api
         .storage()
-        .fetch(&devnet::storage().tfgrid_module().farms(id), at_block)
+        .fetch(&local::storage().tfgrid_module().farms(id), at_block)
         .await?
         .map(types::TfgridFarm::from))
 }
@@ -168,7 +175,7 @@ pub async fn get_balance(
     Ok(cl
         .api
         .storage()
-        .fetch(&devnet::storage().system().account(account), at_block)
+        .fetch(&local::storage().system().account(account), at_block)
         .await?
         .map(types::SystemAccountInfo::from))
 }

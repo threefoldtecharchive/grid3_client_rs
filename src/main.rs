@@ -90,24 +90,29 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let seed = "0x9917ea107aca8e9c29f4530413b41333ada03cf39fede45cde611b943e2e8dd1";
     let _ = KeyPair::from_seed(KeyType::Sr25519, seed, None);
 
-    let cl = client::Client::new(String::from("ws://localhost:9944"), p, Runtime::Mainnet).await?;
+    let cl = client::Client::new(
+        String::from("wss://tfchain.dev.grid.tf:443"),
+        p,
+        Runtime::Devnet,
+    )
+    .await?;
 
     let twin = cl.get_twin_by_id(1, None).await?;
     println!("got twin: {:?}", twin);
 
-    // println!("trying to submit tand call");
-    let hash = cl
-        .sign_terms_and_conditions(String::from("some"), String::from("some"))
-        .await?;
+    // // println!("trying to submit tand call");
+    // let hash = cl
+    //     .sign_terms_and_conditions(String::from("some"), String::from("some"))
+    //     .await?;
 
-    println!("tandc call executed with hash {:?}", hash);
+    // println!("tandc call executed with hash {:?}", hash);
 
-    let hash = cl.create_twin(Some(String::from("::1")), None).await?;
+    // let hash = cl.create_twin(Some(String::from("::1")), None).await?;
 
-    println!("twin call executed with hash {:?}", hash);
+    // println!("twin call executed with hash {:?}", hash);
 
-    let twin = cl.get_twin_by_id(1, None).await?;
-    println!("got twin: {:?}", twin);
+    // let twin = cl.get_twin_by_id(1, None).await?;
+    // println!("got twin: {:?}", twin);
 
     // let farm = cl.get_farm_by_id(1, None).await?;
     // println!("got farm: {:?}", farm);

@@ -4,6 +4,15 @@ use subxt::{ext::sp_runtime::AccountId32, Config, PolkadotConfig};
 use frame_system::AccountInfo;
 use pallet_balances::AccountData;
 
+use super::local::local::runtime_types::pallet_tfgrid::types::EntityProof as LocalEntityProof;
+use super::local::local::runtime_types::tfchain_support::types::{
+    FarmCertification as LocalFarmCertification, NodeCertification as LocalNodeCertification,
+};
+use super::local::{
+    Contract as LocalContract, Farm as LocalFarm, Node as LocalNode,
+    SystemAccountInfo as LocalSystemAccountInfo, Twin as LocalTwin,
+};
+
 use super::devnet::devnet::runtime_types::pallet_tfgrid::types::EntityProof as DevnetEntityProof;
 use super::devnet::devnet::runtime_types::tfchain_support::types::{
     FarmCertification as DevnetFarmCertification, NodeCertification as DevnetNodeCertification,
@@ -226,6 +235,53 @@ pub enum ContractData {
 impl Default for ContractData {
     fn default() -> ContractData {
         ContractData::RentContract(RentContract::default())
+    }
+}
+
+impl From<LocalContract> for Contract {
+    fn from(contract: LocalContract) -> Self {
+        let mut ctr = Contract {
+            version: contract.version,
+            contract_id: contract.contract_id,
+            twin_id: contract.twin_id,
+            state: ContractState::Created,
+            solution_provider_id: contract.solution_provider_id,
+            contract_type: ContractData::default(),
+        };
+
+        match contract.contract_type {
+            super::local::local::runtime_types::pallet_smart_contract::types::ContractData::NodeContract(nc) => {
+
+                ctr.contract_type = ContractData::NodeContract(NodeContract{
+                    node_id: nc.node_id,
+                    deployment_data: parse_vec_u8!(nc.deployment_data.0),
+                    deployment_hash: nc.deployment_hash.into(),
+                    public_ips: nc.public_ips,
+                    public_ips_list: nc.public_ips_list.0.iter().map(|ip| IP {
+                        ip: parse_vec_u8!(ip.ip.0.clone()),
+                        gw: parse_vec_u8!(ip.gateway.0.clone())
+                    }).collect()
+                });
+            },
+            super::local::local::runtime_types::pallet_smart_contract::types::ContractData::NameContract(nmc) => {
+                ctr.contract_type = ContractData::NameContract(NameContract{ name: parse_vec_u8!(nmc.name.0.0) })
+            },
+            super::local::local::runtime_types::pallet_smart_contract::types::ContractData::RentContract(rc) => {
+                ctr.contract_type = ContractData::RentContract(RentContract { node_id: rc.node_id })
+            }
+        }
+
+        match contract.state {
+            super::local::local::runtime_types::pallet_smart_contract::types::ContractState::Created => {
+                ctr.state = ContractState::Created
+            },
+            super::local::local::runtime_types::pallet_smart_contract::types::ContractState::GracePeriod(block) => {
+                ctr.state = ContractState::GracePeriod(block as u32)
+            },
+            _ => ()
+        };
+
+        ctr
     }
 }
 
@@ -498,6 +554,146 @@ impl From<DevnetFarm> for TfgridFarm {
             dedicated_farm: farm.dedicated_farm,
             farming_policy_limits: limit,
             public_ips,
+        }
+    }
+}
+
+impl From<LocalFarm> for TfgridFarm {
+    fn from(farm: LocalFarm) -> Self {
+        let farm_name = parse_vec_u8!(farm.name.0 .0);
+
+        let limit: Option<FarmingPolicyLimit> = match farm.farming_policy_limits {
+            Some(lim) => Some(FarmingPolicyLimit {
+                cu: lim.cu,
+                su: lim.su,
+                end: lim.end,
+                farming_policy_id: lim.farming_policy_id,
+                node_certification: lim.node_certification,
+                node_count: lim.node_count,
+            }),
+            None => None,
+        };
+
+        let mut public_ips = vec![];
+        for ip in farm.public_ips.0 {
+            public_ips.push(FarmPublicIP {
+                ip: parse_vec_u8!(ip.ip.0),
+                gateway: parse_vec_u8!(ip.gateway.0),
+                contract_id: ip.contract_id,
+            })
+        }
+
+        let farm_certification: FarmCertification = match farm.certification {
+            LocalFarmCertification::Gold => FarmCertification::Gold,
+            LocalFarmCertification::NotCertified => FarmCertification::NotCertified,
+        };
+
+        TfgridFarm {
+            version: farm.version,
+            id: farm.id,
+            name: farm_name,
+            twin_id: farm.twin_id,
+            pricing_policy_id: farm.pricing_policy_id,
+            certification: farm_certification,
+            dedicated_farm: farm.dedicated_farm,
+            farming_policy_limits: limit,
+            public_ips,
+        }
+    }
+}
+
+impl From<LocalNode> for TfgridNode {
+    fn from(node: LocalNode) -> Self {
+        let mut resources = ConsumableResources::default();
+        resources.total_resources.cru = node.resources.cru;
+        resources.total_resources.hru = node.resources.hru;
+        resources.total_resources.mru = node.resources.mru;
+        resources.total_resources.sru = node.resources.sru;
+
+        let location = Location {
+            city: parse_vec_u8!(node.location.city.0 .0),
+            country: parse_vec_u8!(node.location.country.0 .0),
+            latitude: parse_vec_u8!(node.location.latitude.0),
+            longitude: parse_vec_u8!(node.location.longitude.0),
+        };
+
+        let public_config = match node.public_config {
+            Some(config) => {
+                let mut pub_conf = PublicConfig {
+                    ip4: IP {
+                        ip: parse_vec_u8!(config.ip4.ip.0),
+                        gw: parse_vec_u8!(config.ip4.gw.0),
+                    },
+                    ip6: None,
+                    domain: None,
+                };
+
+                pub_conf.ip6 = match config.ip6 {
+                    Some(conf6) => Some(IP {
+                        ip: parse_vec_u8!(conf6.ip.0),
+                        gw: parse_vec_u8!(conf6.gw.0),
+                    }),
+                    None => None,
+                };
+
+                pub_conf.domain = match config.domain {
+                    Some(domain) => Some(parse_vec_u8!(domain.0)),
+                    None => None,
+                };
+
+                Some(pub_conf)
+            }
+            None => None,
+        };
+
+        let interfaces = node
+            .interfaces
+            .into_iter()
+            .map(|intf| {
+                let ips = intf
+                    .ips
+                    .0
+                    .into_iter()
+                    .map(|ip| parse_vec_u8!(ip.0 .0))
+                    .collect();
+                Interface {
+                    name: parse_vec_u8!(intf.name.0 .0),
+                    mac: parse_vec_u8!(intf.mac.0 .0),
+                    ips,
+                }
+            })
+            .collect();
+
+        let certification = match node.certification {
+            LocalNodeCertification::Certified => NodeCertification::Certified,
+            LocalNodeCertification::Diy => NodeCertification::Diy,
+        };
+
+        let serial_number = match node.serial_number {
+            Some(s) => Some(parse_vec_u8!(s.0 .0)),
+            None => None,
+        };
+
+        TfgridNode {
+            version: node.version,
+            id: node.id,
+            farm_id: node.farm_id,
+            twin_id: node.twin_id,
+            resources,
+            location,
+            power: Power {
+                target: PowerTarget::Up,
+                state: PowerState::Up,
+                last_uptime: 0,
+            },
+            public_config,
+            created: node.created,
+            farming_policy_id: node.farming_policy_id,
+            interfaces,
+            certification,
+            secure_boot: node.secure_boot,
+            serial_number,
+            connection_price: node.connection_price,
         }
     }
 }
@@ -823,6 +1019,23 @@ impl From<DevnetSystemAccountInfo> for SystemAccountInfo {
     }
 }
 
+impl From<LocalSystemAccountInfo> for SystemAccountInfo {
+    fn from(info: LocalSystemAccountInfo) -> Self {
+        SystemAccountInfo {
+            nonce: info.nonce,
+            consumers: info.consumers,
+            providers: info.providers,
+            sufficients: info.sufficients,
+            data: pallet_balances::AccountData {
+                free: info.data.free,
+                fee_frozen: info.data.fee_frozen,
+                misc_frozen: info.data.misc_frozen,
+                reserved: info.data.reserved,
+            },
+        }
+    }
+}
+
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct Twin {
     id: u32,
@@ -838,8 +1051,8 @@ pub struct EntityProof {
     signature: String,
 }
 
-impl From<DevnetTwin> for Twin {
-    fn from(twin: DevnetTwin) -> Self {
+impl From<LocalTwin> for Twin {
+    fn from(twin: LocalTwin) -> Self {
         let relay = match twin.relay {
             Some(r) => parse_vec_u8!(r.0),
             None => String::from(""),
@@ -858,6 +1071,31 @@ impl From<DevnetTwin> for Twin {
             relay,
             entities,
             pk,
+        }
+    }
+}
+
+impl From<DevnetTwin> for Twin {
+    fn from(twin: DevnetTwin) -> Self {
+        let ip = parse_vec_u8!(twin.ip.0 .0);
+        let entities = twin.entities.into_iter().map(|e| e.into()).collect();
+
+        Twin {
+            id: twin.id,
+            account_id: twin.account_id,
+            relay: ip,
+            entities,
+            pk: String::from(""),
+        }
+    }
+}
+
+impl From<LocalEntityProof> for EntityProof {
+    fn from(proof: LocalEntityProof) -> Self {
+        let signature = parse_vec_u8!(proof.signature);
+        EntityProof {
+            entity_id: proof.entity_id,
+            signature,
         }
     }
 }
