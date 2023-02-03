@@ -1072,9 +1072,9 @@ impl From<DevnetTwin> for Twin {
         Twin {
             id: twin.id,
             account: twin.account_id,
-            relay: Some(parse_vec_u8!(twin.ip.0 .0)),
+            relay: twin.relay.map(|v| parse_vec_u8!(v.0)),
             entities,
-            pk: None,
+            pk: twin.pk.map(|v| v.0),
         }
     }
 }

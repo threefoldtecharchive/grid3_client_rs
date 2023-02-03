@@ -11,7 +11,6 @@ pub use devnet::runtime_types::pallet_tfgrid::{
     farm::FarmName,
     interface::{InterfaceIp, InterfaceMac, InterfaceName},
     node::{Location, SerialNumber},
-    twin::TwinIp,
     types::Twin as TwinData,
 };
 use devnet::runtime_types::sp_core::bounded::bounded_vec::BoundedVec;
@@ -21,7 +20,7 @@ pub use devnet::runtime_types::tfchain_support::types::{
 use subxt::ext::{sp_core::H256, sp_runtime::AccountId32};
 use subxt::Error;
 
-pub type Twin = TwinData<TwinIp, AccountId32>;
+pub type Twin = TwinData<AccountId32>;
 
 pub type Farm = FarmData<FarmName>;
 
@@ -39,12 +38,13 @@ pub type SystemAccountInfo = AccountInfo<u32, AccountData<u128>>;
 pub async fn create_twin(
     cl: &Client,
     kp: &KeyPair,
-    ip: Option<String>,
-    _pk: Option<String>,
+    relay: Option<String>,
+    pk: Option<String>,
 ) -> Result<u32, Error> {
-    let create_twin_tx = devnet::tx()
-        .tfgrid_module()
-        .create_twin(BoundedVec(ip.unwrap().as_bytes().to_vec()));
+    let create_twin_tx = devnet::tx().tfgrid_module().create_twin(
+        relay.map(|r| BoundedVec(r.as_bytes().to_vec())),
+        pk.map(|r| BoundedVec(r.as_bytes().to_vec())),
+    );
 
     let signer = kp.signer();
 
@@ -69,12 +69,13 @@ pub async fn create_twin(
 pub async fn update_twin(
     cl: &Client,
     kp: &KeyPair,
-    ip: Option<String>,
-    _pk: Option<String>,
+    relay: Option<String>,
+    pk: Option<String>,
 ) -> Result<H256, Error> {
-    let update_twin_tx = devnet::tx()
-        .tfgrid_module()
-        .update_twin(BoundedVec(ip.unwrap().as_bytes().to_vec()));
+    let update_twin_tx = devnet::tx().tfgrid_module().update_twin(
+        relay.map(|r| BoundedVec(r.as_bytes().to_vec())),
+        pk.map(|r| BoundedVec(r.as_bytes().to_vec())),
+    );
 
     let signer = kp.signer();
 
