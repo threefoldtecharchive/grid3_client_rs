@@ -73,11 +73,11 @@ pub async fn update_twin(
     cl: &Client,
     kp: &KeyPair,
     relay: Option<String>,
-    pk: Option<String>,
+    pk: Option<&[u8]>,
 ) -> Result<H256, Error> {
     let update_twin_tx = local::tx().tfgrid_module().update_twin(
         relay.map(|r| BoundedVec(r.as_bytes().to_vec())),
-        pk.map(|r| BoundedVec(r.as_bytes().to_vec())),
+        pk.map(|r| BoundedVec(r.to_vec())),
     );
 
     let signer = kp.signer();

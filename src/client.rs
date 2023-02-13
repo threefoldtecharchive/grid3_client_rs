@@ -137,7 +137,7 @@ impl Client {
         &self,
         kp: &KeyPair,
         relay: Option<String>,
-        pk: Option<String>,
+        pk: Option<&[u8]>,
     ) -> Result<Hash, Error> {
         call!(self, update_twin, kp, relay, pk)
     }

@@ -74,7 +74,7 @@ pub async fn update_twin(
     cl: &Client,
     kp: &KeyPair,
     ip: Option<String>,
-    _pk: Option<String>,
+    _pk: Option<&[u8]>,
 ) -> Result<H256, Error> {
     let update_twin_tx = testnet::tx()
         .tfgrid_module()
