@@ -348,17 +348,17 @@ impl From<TestnetContract> for Contract {
 
                 ctr.contract_type = ContractData::NodeContract(NodeContract{
                     node_id: nc.node_id,
-                    deployment_data: parse_vec_u8!(nc.deployment_data),
+                    deployment_data: parse_vec_u8!(nc.deployment_data.0),
                     deployment_hash: nc.deployment_hash.into(),
                     public_ips: nc.public_ips,
-                    public_ips_list: nc.public_ips_list.iter().map(|ip| IP {
+                    public_ips_list: nc.public_ips_list.0.iter().map(|ip| IP {
                         ip: parse_vec_u8!(ip.ip.0.clone()),
                         gw: parse_vec_u8!(ip.gateway.0.clone())
                     }).collect()
                 });
             },
             super::testnet::testnet::runtime_types::pallet_smart_contract::types::ContractData::NameContract(nmc) => {
-                ctr.contract_type = ContractData::NameContract(NameContract{ name: parse_vec_u8!(nmc.name.0) })
+                ctr.contract_type = ContractData::NameContract(NameContract{ name: parse_vec_u8!(nmc.name.0.0) })
             },
             super::testnet::testnet::runtime_types::pallet_smart_contract::types::ContractData::RentContract(rc) => {
                 ctr.contract_type = ContractData::RentContract(RentContract { node_id: rc.node_id })
@@ -395,17 +395,17 @@ impl From<MainnetContract> for Contract {
 
                 ctr.contract_type = ContractData::NodeContract(NodeContract{
                     node_id: nc.node_id,
-                    deployment_data: parse_vec_u8!(nc.deployment_data),
+                    deployment_data: parse_vec_u8!(nc.deployment_data.0),
                     deployment_hash: nc.deployment_hash.into(),
                     public_ips: nc.public_ips,
-                    public_ips_list: nc.public_ips_list.iter().map(|ip| IP {
+                    public_ips_list: nc.public_ips_list.0.iter().map(|ip| IP {
                         ip: parse_vec_u8!(ip.ip.0.clone()),
                         gw: parse_vec_u8!(ip.gateway.0.clone())
                     }).collect()
                 });
             },
             super::mainnet::mainnet::runtime_types::pallet_smart_contract::types::ContractData::NameContract(nmc) => {
-                ctr.contract_type = ContractData::NameContract(NameContract{ name: parse_vec_u8!(nmc.name.0) })
+                ctr.contract_type = ContractData::NameContract(NameContract{ name: parse_vec_u8!(nmc.name.0.0) })
             },
             super::mainnet::mainnet::runtime_types::pallet_smart_contract::types::ContractData::RentContract(rc) => {
                 ctr.contract_type = ContractData::RentContract(RentContract { node_id: rc.node_id })
@@ -428,7 +428,7 @@ impl From<MainnetContract> for Contract {
 
 impl From<MainnetFarm> for TfgridFarm {
     fn from(farm: MainnetFarm) -> Self {
-        let farm_name = parse_vec_u8!(farm.name.0);
+        let farm_name = parse_vec_u8!(farm.name.0 .0);
 
         let limit: Option<FarmingPolicyLimit> = match farm.farming_policy_limits {
             Some(lim) => Some(FarmingPolicyLimit {
@@ -443,7 +443,7 @@ impl From<MainnetFarm> for TfgridFarm {
         };
 
         let mut public_ips = vec![];
-        for ip in farm.public_ips {
+        for ip in farm.public_ips.0 {
             public_ips.push(FarmPublicIP {
                 ip: parse_vec_u8!(ip.ip.0),
                 gateway: parse_vec_u8!(ip.gateway.0),
@@ -472,7 +472,7 @@ impl From<MainnetFarm> for TfgridFarm {
 
 impl From<TestnetFarm> for TfgridFarm {
     fn from(farm: TestnetFarm) -> Self {
-        let farm_name = parse_vec_u8!(farm.name.0);
+        let farm_name = parse_vec_u8!(farm.name.0 .0);
 
         let limit: Option<FarmingPolicyLimit> = match farm.farming_policy_limits {
             Some(lim) => Some(FarmingPolicyLimit {
@@ -487,7 +487,7 @@ impl From<TestnetFarm> for TfgridFarm {
         };
 
         let mut public_ips = vec![];
-        for ip in farm.public_ips {
+        for ip in farm.public_ips.0 {
             public_ips.push(FarmPublicIP {
                 ip: parse_vec_u8!(ip.ip.0),
                 gateway: parse_vec_u8!(ip.gateway.0),
@@ -803,10 +803,10 @@ impl From<TestnetNode> for TfgridNode {
         resources.total_resources.sru = node.resources.sru;
 
         let location = Location {
-            city: parse_vec_u8!(node.city),
-            country: parse_vec_u8!(node.country),
-            latitude: parse_vec_u8!(node.location.latitude),
-            longitude: parse_vec_u8!(node.location.longitude),
+            city: parse_vec_u8!(node.location.city.0 .0),
+            country: parse_vec_u8!(node.location.country.0 .0),
+            latitude: parse_vec_u8!(node.location.latitude.0),
+            longitude: parse_vec_u8!(node.location.longitude.0),
         };
 
         let public_config = match node.public_config {
@@ -842,10 +842,15 @@ impl From<TestnetNode> for TfgridNode {
             .interfaces
             .into_iter()
             .map(|intf| {
-                let ips = intf.ips.into_iter().map(|ip| parse_vec_u8!(ip.0)).collect();
+                let ips = intf
+                    .ips
+                    .0
+                    .into_iter()
+                    .map(|ip| parse_vec_u8!(ip.0 .0))
+                    .collect();
                 Interface {
-                    name: parse_vec_u8!(intf.name.0),
-                    mac: parse_vec_u8!(intf.mac.0),
+                    name: parse_vec_u8!(intf.name.0 .0),
+                    mac: parse_vec_u8!(intf.mac.0 .0),
                     ips,
                 }
             })
@@ -854,6 +859,11 @@ impl From<TestnetNode> for TfgridNode {
         let certification = match node.certification {
             TestnetNodeCertification::Certified => NodeCertification::Certified,
             TestnetNodeCertification::Diy => NodeCertification::Diy,
+        };
+
+        let serial_number = match node.serial_number {
+            Some(s) => Some(parse_vec_u8!(s.0 .0)),
+            None => None,
         };
 
         TfgridNode {
@@ -874,7 +884,7 @@ impl From<TestnetNode> for TfgridNode {
             interfaces,
             certification,
             secure_boot: node.secure_boot,
-            serial_number: Some(parse_vec_u8!(node.serial_number)),
+            serial_number,
             connection_price: node.connection_price,
         }
     }
@@ -889,10 +899,10 @@ impl From<MainnetNode> for TfgridNode {
         resources.total_resources.sru = node.resources.sru;
 
         let location = Location {
-            city: parse_vec_u8!(node.city),
-            country: parse_vec_u8!(node.country),
-            latitude: parse_vec_u8!(node.location.latitude),
-            longitude: parse_vec_u8!(node.location.longitude),
+            city: parse_vec_u8!(node.location.city.0 .0),
+            country: parse_vec_u8!(node.location.country.0 .0),
+            latitude: parse_vec_u8!(node.location.latitude.0),
+            longitude: parse_vec_u8!(node.location.longitude.0),
         };
 
         let public_config = match node.public_config {
@@ -928,10 +938,15 @@ impl From<MainnetNode> for TfgridNode {
             .interfaces
             .into_iter()
             .map(|intf| {
-                let ips = intf.ips.into_iter().map(|ip| parse_vec_u8!(ip.0)).collect();
+                let ips = intf
+                    .ips
+                    .0
+                    .into_iter()
+                    .map(|ip| parse_vec_u8!(ip.0 .0))
+                    .collect();
                 Interface {
-                    name: parse_vec_u8!(intf.name.0),
-                    mac: parse_vec_u8!(intf.mac.0),
+                    name: parse_vec_u8!(intf.name.0 .0),
+                    mac: parse_vec_u8!(intf.mac.0 .0),
                     ips,
                 }
             })
@@ -940,6 +955,11 @@ impl From<MainnetNode> for TfgridNode {
         let certification = match node.certification {
             MainnetNodeCertification::Certified => NodeCertification::Certified,
             MainnetNodeCertification::Diy => NodeCertification::Diy,
+        };
+
+        let serial_number = match node.serial_number {
+            Some(s) => Some(parse_vec_u8!(s.0 .0)),
+            None => None,
         };
 
         TfgridNode {
@@ -960,7 +980,7 @@ impl From<MainnetNode> for TfgridNode {
             interfaces,
             certification,
             secure_boot: node.secure_boot,
-            serial_number: Some(parse_vec_u8!(node.serial_number)),
+            serial_number,
             connection_price: node.connection_price,
         }
     }
@@ -1106,7 +1126,7 @@ impl From<TestnetTwin> for Twin {
         Twin {
             id: twin.id,
             account: twin.account_id,
-            relay: Some(parse_vec_u8!(twin.ip.0)),
+            relay: Some(parse_vec_u8!(twin.ip.0 .0)),
             entities,
             pk: None,
         }
@@ -1130,7 +1150,7 @@ impl From<MainnetTwin> for Twin {
         Twin {
             id: twin.id,
             account: twin.account_id,
-            relay: Some(parse_vec_u8!(twin.ip.0)),
+            relay: Some(parse_vec_u8!(twin.ip.0 .0)),
             entities,
             pk: None,
         }

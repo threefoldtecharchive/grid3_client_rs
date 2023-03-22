@@ -12,25 +12,22 @@ pub use testnet::runtime_types::pallet_smart_contract::types::Contract;
 pub use testnet::runtime_types::pallet_tfgrid::{
     farm::FarmName,
     interface::{InterfaceIp, InterfaceMac, InterfaceName},
-    pub_config::{Domain, GW4, GW6, IP4, IP6},
-    pub_ip::{GatewayIP, PublicIP},
+    node::{Location, SerialNumber},
     twin::TwinIp,
     types::Twin as TwinData,
 };
+use testnet::runtime_types::sp_core::bounded::bounded_vec::BoundedVec;
+
 pub use testnet::runtime_types::tfchain_support::types::{
-    Farm as FarmData, Interface, Node as NodeData, PublicConfig, PublicIP as PublicIpData, IP,
+    Farm as FarmData, Interface, Node as NodeData, PublicConfig, PublicIP as PublicIpData,
 };
 
 pub type Twin = TwinData<TwinIp, AccountId32>;
 
-pub type PublicIpOf = PublicIpData<PublicIP, GatewayIP>;
-pub type Farm = FarmData<FarmName, PublicIpOf>;
+pub type Farm = FarmData<FarmName>;
 
-pub type IPv4 = IP<IP4, GW4>;
-pub type IPv6 = IP<IP6, GW6>;
-pub type PublicConfigOf = PublicConfig<IPv4, Option<IPv6>, Option<Domain>>;
-pub type InterfaceOf = Interface<InterfaceName, InterfaceMac, Vec<InterfaceIp>>;
-pub type Node = NodeData<PublicConfigOf, InterfaceOf>;
+pub type InterfaceOf = Interface<InterfaceName, InterfaceMac, BoundedVec<InterfaceIp>>;
+pub type Node = NodeData<Location, InterfaceOf, SerialNumber>;
 
 use crate::client::{Client, KeyPair};
 
@@ -46,9 +43,11 @@ pub async fn create_twin(
     ip: Option<String>,
     _pk: Option<String>,
 ) -> Result<u32, Error> {
-    let create_twin_tx = testnet::tx()
-        .tfgrid_module()
-        .create_twin(ip.unwrap().as_bytes().to_vec());
+    let ip = match ip {
+        Some(ip) => BoundedVec(ip.as_bytes().to_vec()),
+        None => BoundedVec(vec![]),
+    };
+    let create_twin_tx = testnet::tx().tfgrid_module().create_twin(ip);
 
     let signer = kp.signer();
 
@@ -76,9 +75,11 @@ pub async fn update_twin(
     ip: Option<String>,
     _pk: Option<&[u8]>,
 ) -> Result<H256, Error> {
-    let update_twin_tx = testnet::tx()
-        .tfgrid_module()
-        .update_twin(ip.unwrap().as_bytes().to_vec());
+    let ip = match ip {
+        Some(ip) => BoundedVec(ip.as_bytes().to_vec()),
+        None => BoundedVec(vec![]),
+    };
+    let update_twin_tx = testnet::tx().tfgrid_module().update_twin(ip);
 
     let signer = kp.signer();
 
@@ -107,8 +108,8 @@ pub async fn sign_terms_and_conditions(
     document_hash: String,
 ) -> Result<H256, Error> {
     let sign_tandc_tx = testnet::tx().tfgrid_module().user_accept_tc(
-        document_link.as_bytes().to_vec(),
-        document_hash.as_bytes().to_vec(),
+        BoundedVec(document_link.as_bytes().to_vec()),
+        BoundedVec(document_hash.as_bytes().to_vec()),
     );
 
     let signer = kp.signer();
