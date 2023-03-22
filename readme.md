@@ -1,5 +1,7 @@
 # TF Chain client
 
+DEPRECATED: moved to https://github.com/threefoldtech/tfchain/tree/development/tfchain_client
+
 ## Run the examples
 
 ```
